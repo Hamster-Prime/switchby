@@ -1,0 +1,23 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    justifyContent="center"
+    alignItems="center">
+
+    <brls:Label
+        text="SwitchBy"
+        fontSize="32"
+        marginBottom="20" />
+
+    <brls:Label
+        text="Emby Client for Switch"
+        fontSize="20"
+        textColor="#888888" />
+
+    <brls:Button
+        id="btn_connect"
+        text="Connect to Server"
+        marginTop="50" />
+
+</brls:Box>
