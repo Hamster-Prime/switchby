@@ -148,8 +148,17 @@ void DetailActivity::onContentAvailable() {
                                 finalUrl = source.transcodingUrl;
                                 brls::Logger::info("Using Transcoding: {}", finalUrl);
                             } else {
-                                brls::Application::notify("Format not supported on Switch");
-                                return;
+                                // Fallback: Force Direct Stream even if server says no.
+                                // This handles the "No Server Transcoding" + "Server thinks device is incompatible" case.
+                                // MPV is powerful enough to handle most things locally.
+                                if (!source.directStreamUrl.empty()) {
+                                     finalUrl = source.directStreamUrl;
+                                     brls::Application::notify("Forcing Direct Play (Local Decode)");
+                                     brls::Logger::info("Forcing Direct Stream: {}", finalUrl);
+                                } else {
+                                    brls::Application::notify("Format not supported and no stream URL");
+                                    return;
+                                }
                             }
                             
                             brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));

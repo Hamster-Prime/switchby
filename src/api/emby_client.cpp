@@ -473,14 +473,23 @@ void EmbyClient::reportPlaybackStopped(const std::string& itemId, long positionT
 
 void EmbyClient::getPlaybackInfo(const std::string& itemId, std::function<void(bool success, const PlaybackInfo& info)> cb) {
     // Construct device profile for Switch
-    // This tells the server what we can handle natively
+    // We report broad compatibility because we use MPV which supports software decoding (local transcoding)
+    // This is crucial for servers that disable server-side transcoding.
     json deviceProfile = {
-        {"MaxStreamingBitrate", 20000000}, // 20 Mbps cap
-        {"MusicStreamingTranscodingBitrate", 192000},
+        {"MaxStreamingBitrate", 120000000}, // 120 Mbps (effectively unlimited)
+        {"MusicStreamingTranscodingBitrate", 320000},
         {"TimelineOffsetSeconds", 5},
         {"DirectPlayProfiles", {
-            {{"Container", "mp4,m4v"}, {"Type", "Video"}, {"VideoCodec", "h264"}, {"AudioCodec", "aac,mp3,opus"}},
-            {{"Container", "mkv"}, {"Type", "Video"}, {"VideoCodec", "h264,vp8,vp9"}, {"AudioCodec", "aac,mp3,opus,vorbis,flac"}}
+            {
+                {"Container", "mp4,m4v,mkv,avi,mov,wmv,flv,webm,ts,mpeg,mpg,m2ts"}, 
+                {"Type", "Video"}, 
+                {"VideoCodec", "h264,h265,hevc,vp8,vp9,av1,mpeg2video,mpeg4,vc1"}, 
+                {"AudioCodec", "aac,mp3,opus,vorbis,flac,ac3,eac3,dts,truehd,dts-hd,pcm_s16le,pcm_s24le"}
+            },
+            {
+                {"Container", "mp3,flac,aac,ogg,m4a,wav,wma"}, 
+                {"Type", "Audio"}
+            }
         }},
         {"TranscodingProfiles", {
             {{"Container", "ts"}, {"Type", "Video"}, {"AudioCodec", "aac"}, {"VideoCodec", "h264"}, {"Context", "Streaming"}, {"Protocol", "hls"}},
