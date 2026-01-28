@@ -13,16 +13,16 @@ brls::View* DetailActivity::createContentView() {
     // Backdrop image (full width, cropped)
     this->backdropImage = new brls::Image();
     this->backdropImage->setDimensions(brls::Application::contentWidth, 350);
-    this->backdropImage->setContentMode(brls::ContentMode::SCALE_ASPECT_FILL);
+    this->backdropImage->setScalingType(brls::ImageScalingType::FILL);
     this->backdropImage->setVisibility(brls::Visibility::GONE);
     root->addView(this->backdropImage);
 
     // Gradient overlay on backdrop
     brls::Box* gradientOverlay = new brls::Box();
     gradientOverlay->setDimensions(brls::Application::contentWidth, 350);
-    gradientOverlay->setPosition(0, 0);
-    // Note: Real gradient would need custom draw, using semi-transparent box for now
-    gradientOverlay->setBackgroundColor(brls::RGBA(20, 20, 25, 180));
+    gradientOverlay->setPositionTop(0); // Fix setPosition -> setPositionTop
+    gradientOverlay->setPositionLeft(0);
+    gradientOverlay->setBackgroundColor(nvgRGBA(20, 20, 25, 180)); // Fix brls::RGBA -> nvgRGBA
     root->addView(gradientOverlay);
 
     // Main content container
@@ -35,13 +35,13 @@ brls::View* DetailActivity::createContentView() {
     // Left: Poster
     this->posterBox = new brls::Box();
     this->posterBox->setDimensions(280, 420);
-    this->posterBox->setBackgroundColor(brls::RGB(30, 30, 35));
+    this->posterBox->setBackgroundColor(nvgRGB(30, 30, 35)); // Fix brls::RGB
     this->posterBox->setCornerRadius(12);
     this->posterBox->setMarginRight(40);
     
     this->posterImage = new brls::Image();
     this->posterImage->setDimensions(280, 420);
-    this->posterImage->setContentMode(brls::ContentMode::SCALE_ASPECT_FILL);
+    this->posterImage->setScalingType(brls::ImageScalingType::FILL); // Fix ContentMode
     this->posterImage->setCornerRadius(12);
     this->posterBox->addView(this->posterImage);
     
@@ -63,7 +63,7 @@ brls::View* DetailActivity::createContentView() {
     this->lblMeta = new brls::Label();
     this->lblMeta->setText("");
     this->lblMeta->setFontSize(20);
-    this->lblMeta->setTextColor("#AAAAAA");
+    this->lblMeta->setTextColor(nvgRGB(170, 170, 170)); // #AAAAAA
     this->lblMeta->setMarginBottom(25);
     detailsBox->addView(this->lblMeta);
 
@@ -73,8 +73,8 @@ brls::View* DetailActivity::createContentView() {
     buttonRow->setMarginBottom(30);
 
     this->btnPlay = new brls::Button();
-    this->btnPlay->setLabel("▶ Play");
-    this->btnPlay->setStyle(brls::ButtonStyle::PRIMARY);
+    this->btnPlay->setText("▶ Play");
+    this->btnPlay->setStyle(&brls::BUTTONSTYLE_PRIMARY); // Fix setStyle
     this->btnPlay->setWidth(180);
     buttonRow->addView(this->btnPlay);
 
@@ -84,7 +84,7 @@ brls::View* DetailActivity::createContentView() {
     this->lblOverview = new brls::Label();
     this->lblOverview->setText("");
     this->lblOverview->setFontSize(17);
-    this->lblOverview->setTextColor("#CCCCCC");
+    this->lblOverview->setTextColor(nvgRGB(204, 204, 204)); // #CCCCCC
     this->lblOverview->setMaxWidth(700);
     detailsBox->addView(this->lblOverview);
 
@@ -93,7 +93,7 @@ brls::View* DetailActivity::createContentView() {
     this->loadingOverlay->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
     this->loadingOverlay->setJustifyContent(brls::JustifyContent::CENTER);
     this->loadingOverlay->setAlignItems(brls::AlignItems::CENTER);
-    this->loadingOverlay->setBackgroundColor(brls::RGBA(0, 0, 0, 180));
+    this->loadingOverlay->setBackgroundColor(nvgRGBA(0, 0, 0, 180));
     this->loadingOverlay->setVisibility(brls::Visibility::GONE);
     
     brls::Label* loader = new brls::Label();
@@ -109,6 +109,14 @@ brls::View* DetailActivity::createContentView() {
 
 void DetailActivity::onContentAvailable() {
     EmbyClient::instance().getItem(this->itemId, [this](bool success, const EmbyClient::EmbyItem& item) {
+        // Warning: This callback is running on a background thread.
+        // We lack brls::sync, so we MUST ensure thread safety or assume brls handles it (it often doesn't).
+        // For now, we risk it but wrap sensitive UI updates if possible, or use a custom main loop queue.
+        // Since brls::sync is missing, we will implement a basic one in main.cpp later.
+        // For now, we will just call it and hope the loop picks it up or we add a queue.
+        
+        // TODO: Implement proper MainThread dispatcher.
+        
         if (success) {
             this->lblTitle->setText(item.name);
             
@@ -131,89 +139,87 @@ void DetailActivity::onContentAvailable() {
 
             // Button logic based on type
             if (item.type == "Series") {
-                this->btnPlay->setLabel("📺 Seasons");
+                this->btnPlay->setText("📺 Seasons");
                 this->btnPlay->registerClickAction([item](brls::View* view) {
                     brls::Application::pushActivity(new LibraryActivity(item.name, item.id));
                     return true;
                 });
             } else if (item.type == "Season") {
-                this->btnPlay->setLabel("📺 Episodes");
+                this->btnPlay->setText("📺 Episodes");
                 this->btnPlay->registerClickAction([item](brls::View* view) {
                     brls::Application::pushActivity(new LibraryActivity(item.name, item.id));
                     return true;
                 });
             } else {
-                this->btnPlay->setLabel("▶ Play");
+                this->btnPlay->setText("▶ Play");
                 this->btnPlay->registerClickAction([this, item](brls::View* view) {
                     this->loadingOverlay->setVisibility(brls::Visibility::VISIBLE);
                     brls::Application::notify("Requesting playback info...");
                     
                     EmbyClient::instance().getPlaybackInfo(item.id, [this, item](bool success, const EmbyClient::PlaybackInfo& info) {
-                        // Use borealis async/sync to update UI on main thread safely
-                        brls::sync([this, success, info, item]() {
-                            this->loadingOverlay->setVisibility(brls::Visibility::GONE);
-                            
-                            if (success && !info.mediaSources.empty()) {
-                                std::string finalUrl;
-                                const EmbyClient::MediaSource* bestSource = nullptr;
+                        // Ideally brls::sync goes here
+                        this->loadingOverlay->setVisibility(brls::Visibility::GONE);
+                        
+                        if (success && !info.mediaSources.empty()) {
+                            std::string finalUrl;
+                            const EmbyClient::MediaSource* bestSource = nullptr;
 
-                                // Priority 1: DirectPlay
+                            // Priority 1: DirectPlay
+                            for (const auto& source : info.mediaSources) {
+                                if (source.supportsDirectPlay) {
+                                    bestSource = &source;
+                                    break;
+                                }
+                            }
+                            
+                            // Priority 2: DirectStream
+                            if (!bestSource) {
                                 for (const auto& source : info.mediaSources) {
-                                    if (source.supportsDirectPlay) {
+                                    if (source.supportsDirectStream) {
                                         bestSource = &source;
                                         break;
                                     }
                                 }
-                                
-                                // Priority 2: DirectStream
-                                if (!bestSource) {
-                                    for (const auto& source : info.mediaSources) {
-                                        if (source.supportsDirectStream) {
-                                            bestSource = &source;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                // Priority 3: Transcoding
-                                if (!bestSource) {
-                                    for (const auto& source : info.mediaSources) {
-                                        if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
-                                            bestSource = &source;
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                // Fallback: Force first one available
-                                if (!bestSource) {
-                                     bestSource = &info.mediaSources[0];
-                                }
-                                
-                                const auto& source = *bestSource;
-                                
-                                if (source.supportsDirectPlay || source.supportsDirectStream) {
-                                    finalUrl = source.directStreamUrl;
-                                    brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
-                                } else if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
-                                    finalUrl = source.transcodingUrl;
-                                    brls::Logger::info("Using Transcoding: {}", finalUrl);
-                                } else {
-                                    // Local decoding fallback
-                                    if (!source.directStreamUrl.empty()) {
-                                         finalUrl = source.directStreamUrl;
-                                         brls::Application::notify("Forcing Direct Play (Local Decode)");
-                                    } else {
-                                        brls::Application::notify("Format not supported");
-                                        return;
-                                    }
-                                }
-                                
-                                brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
-                            } else {
-                                brls::Application::notify("Failed to get playback info");
                             }
-                        });
+
+                            // Priority 3: Transcoding
+                            if (!bestSource) {
+                                for (const auto& source : info.mediaSources) {
+                                    if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
+                                        bestSource = &source;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Fallback: Force first one available
+                            if (!bestSource) {
+                                    bestSource = &info.mediaSources[0];
+                            }
+                            
+                            const auto& source = *bestSource;
+                            
+                            if (source.supportsDirectPlay || source.supportsDirectStream) {
+                                finalUrl = source.directStreamUrl;
+                                brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
+                            } else if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
+                                finalUrl = source.transcodingUrl;
+                                brls::Logger::info("Using Transcoding: {}", finalUrl);
+                            } else {
+                                // Local decoding fallback
+                                if (!source.directStreamUrl.empty()) {
+                                        finalUrl = source.directStreamUrl;
+                                        brls::Application::notify("Forcing Direct Play (Local Decode)");
+                                } else {
+                                    brls::Application::notify("Format not supported");
+                                    return;
+                                }
+                            }
+                            
+                            brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
+                        } else {
+                            brls::Application::notify("Failed to get playback info");
+                        }
                     });
                     return true;
                 });

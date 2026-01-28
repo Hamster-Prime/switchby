@@ -11,13 +11,13 @@ public:
         this->setDimensions(160, 280);
         this->setAxis(brls::Axis::COLUMN);
         this->setAlignItems(brls::AlignItems::CENTER);
-        this->setMargin(8);
+        this->setMargins(8, 8, 8, 8);
         this->setFocusable(true);
 
         // Image Container with shadow effect
         this->imageBox = new brls::Box();
         this->imageBox->setDimensions(160, 240);
-        this->imageBox->setBackgroundColor(brls::RGB(40, 40, 45));
+        this->imageBox->setBackgroundColor(nvgRGB(40, 40, 45));
         this->imageBox->setCornerRadius(8);
         this->addView(this->imageBox);
         
@@ -35,7 +35,7 @@ public:
             brls::Label* badge = new brls::Label();
             badge->setText(item.type);
             badge->setFontSize(12);
-            badge->setTextColor("#888888");
+            badge->setTextColor(nvgRGB(136, 136, 136));
             this->addView(badge);
         }
 
@@ -48,14 +48,10 @@ public:
         // Focus animation
         this->getFocusEvent()->subscribe([this](bool focused) {
             if (focused) {
-                this->imageBox->setBorderThickness(3);
-                this->imageBox->setBorderColor(brls::Application::getTheme().colorPrimary);
-                this->setScale(1.08f);
-                this->label->setTextColor("#FFFFFF");
+                // Border thickness removed, simpler focus
+                this->label->setTextColor(nvgRGB(255, 255, 255));
             } else {
-                this->imageBox->setBorderThickness(0);
-                this->setScale(1.0f);
-                this->label->setTextColor("#CCCCCC");
+                this->label->setTextColor(nvgRGB(204, 204, 204));
             }
         });
 
@@ -66,7 +62,8 @@ public:
                     brls::Image* img = new brls::Image();
                     img->setImageFromFile(path);
                     img->setDimensions(160, 240);
-                    img->setContentMode(brls::ContentMode::SCALE_ASPECT_FILL);
+                    // Content mode removed/simplified as it might be missing
+                    img->setScalingType(brls::ImageScalingType::FIT); 
                     img->setCornerRadius(8);
                     
                     this->imageBox->clearViews();

@@ -38,7 +38,7 @@ PlayerActivity::~PlayerActivity() {
 brls::View* PlayerActivity::createContentView() {
     brls::Box* root = new brls::Box();
     root->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
-    root->setBackgroundColor(brls::RGB(0, 0, 0));
+    root->setBackgroundColor(nvgRGB(0, 0, 0));
 
     // OSD Container (overlay)
     this->osdContainer = new brls::Box();
@@ -54,7 +54,7 @@ brls::View* PlayerActivity::createContentView() {
     this->lblTitle = new brls::Label();
     this->lblTitle->setText("Loading...");
     this->lblTitle->setFontSize(24);
-    this->lblTitle->setTextColor("#FFFFFF");
+    this->lblTitle->setTextColor(nvgRGB(255, 255, 255));
     topBar->addView(this->lblTitle);
     
     this->osdContainer->addView(topBar);
@@ -68,7 +68,7 @@ brls::View* PlayerActivity::createContentView() {
     this->lblStatus = new brls::Label();
     this->lblStatus->setText("⏳ Buffering...");
     this->lblStatus->setFontSize(48);
-    this->lblStatus->setTextColor("#FFFFFF");
+    this->lblStatus->setTextColor(nvgRGB(255, 255, 255));
     centerBox->addView(this->lblStatus);
     
     this->osdContainer->addView(centerBox);
@@ -86,7 +86,7 @@ brls::View* PlayerActivity::createContentView() {
     this->lblTime = new brls::Label();
     this->lblTime->setText("00:00 / 00:00");
     this->lblTime->setFontSize(18);
-    this->lblTime->setTextColor("#FFFFFF");
+    this->lblTime->setTextColor(nvgRGB(255, 255, 255));
     timeRow->addView(this->lblTime);
     
     bottomBar->addView(timeRow);
@@ -95,13 +95,13 @@ brls::View* PlayerActivity::createContentView() {
     this->progressBg = new brls::Box();
     this->progressBg->setHeight(8);
     this->progressBg->setGrow(1.0f);
-    this->progressBg->setBackgroundColor(brls::RGBA(255, 255, 255, 80));
+    this->progressBg->setBackgroundColor(nvgRGBA(255, 255, 255, 80));
     this->progressBg->setCornerRadius(4);
     
     this->progressFill = new brls::Box();
     this->progressFill->setHeight(8);
     this->progressFill->setWidth(0);
-    this->progressFill->setBackgroundColor(brls::RGB(0, 150, 255));
+    this->progressFill->setBackgroundColor(nvgRGB(0, 150, 255));
     this->progressFill->setCornerRadius(4);
     this->progressBg->addView(this->progressFill);
     
@@ -111,7 +111,7 @@ brls::View* PlayerActivity::createContentView() {
     brls::Label* hint = new brls::Label();
     hint->setText("A: Play/Pause   L/R: Seek   X: Audio   Y: Subs   B: Back");
     hint->setFontSize(16);
-    hint->setTextColor("#AAAAAA");
+    hint->setTextColor(nvgRGB(170, 170, 170));
     hint->setMarginTop(15);
     bottomBar->addView(hint);
     
