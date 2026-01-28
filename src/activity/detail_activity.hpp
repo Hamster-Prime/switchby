@@ -18,4 +18,5 @@ private:
     brls::Label* lblMeta;
     brls::Label* lblOverview;
     brls::Button* btnPlay;
+    brls::Box* loadingOverlay;
 };

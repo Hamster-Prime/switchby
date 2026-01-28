@@ -88,8 +88,21 @@ brls::View* DetailActivity::createContentView() {
     this->lblOverview->setMaxWidth(700);
     detailsBox->addView(this->lblOverview);
 
-    container->addView(detailsBox);
-    root->addView(container);
+    // Loading Overlay
+    this->loadingOverlay = new brls::Box();
+    this->loadingOverlay->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
+    this->loadingOverlay->setJustifyContent(brls::JustifyContent::CENTER);
+    this->loadingOverlay->setAlignItems(brls::AlignItems::CENTER);
+    this->loadingOverlay->setBackgroundColor(brls::RGBA(0, 0, 0, 180));
+    this->loadingOverlay->setVisibility(brls::Visibility::GONE);
+    
+    brls::Label* loader = new brls::Label();
+    loader->setText("⏳ Loading...");
+    loader->setFontSize(32);
+    this->loadingOverlay->addView(loader);
+    
+    // Add overlay last to cover everything
+    root->addView(this->loadingOverlay);
 
     return root;
 }
@@ -132,39 +145,75 @@ void DetailActivity::onContentAvailable() {
             } else {
                 this->btnPlay->setLabel("▶ Play");
                 this->btnPlay->registerClickAction([this, item](brls::View* view) {
-                    brls::Application::notify("Loading playback info...");
+                    this->loadingOverlay->setVisibility(brls::Visibility::VISIBLE);
+                    brls::Application::notify("Requesting playback info...");
                     
                     EmbyClient::instance().getPlaybackInfo(item.id, [this, item](bool success, const EmbyClient::PlaybackInfo& info) {
-                        if (success && !info.mediaSources.empty()) {
-                            // Simple logic: Pick first source. 
-                            // If DirectPlay supported, use it. Else use TranscodingUrl.
-                            std::string finalUrl;
-                            const auto& source = info.mediaSources[0];
+                        // Use borealis async/sync to update UI on main thread safely
+                        brls::sync([this, success, info, item]() {
+                            this->loadingOverlay->setVisibility(brls::Visibility::GONE);
                             
-                            if (source.supportsDirectPlay || source.supportsDirectStream) {
-                                finalUrl = source.directStreamUrl;
-                                brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
-                            } else if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
-                                finalUrl = source.transcodingUrl;
-                                brls::Logger::info("Using Transcoding: {}", finalUrl);
-                            } else {
-                                // Fallback: Force Direct Stream even if server says no.
-                                // This handles the "No Server Transcoding" + "Server thinks device is incompatible" case.
-                                // MPV is powerful enough to handle most things locally.
-                                if (!source.directStreamUrl.empty()) {
-                                     finalUrl = source.directStreamUrl;
-                                     brls::Application::notify("Forcing Direct Play (Local Decode)");
-                                     brls::Logger::info("Forcing Direct Stream: {}", finalUrl);
-                                } else {
-                                    brls::Application::notify("Format not supported and no stream URL");
-                                    return;
+                            if (success && !info.mediaSources.empty()) {
+                                std::string finalUrl;
+                                const EmbyClient::MediaSource* bestSource = nullptr;
+
+                                // Priority 1: DirectPlay
+                                for (const auto& source : info.mediaSources) {
+                                    if (source.supportsDirectPlay) {
+                                        bestSource = &source;
+                                        break;
+                                    }
                                 }
+                                
+                                // Priority 2: DirectStream
+                                if (!bestSource) {
+                                    for (const auto& source : info.mediaSources) {
+                                        if (source.supportsDirectStream) {
+                                            bestSource = &source;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                // Priority 3: Transcoding
+                                if (!bestSource) {
+                                    for (const auto& source : info.mediaSources) {
+                                        if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
+                                            bestSource = &source;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                // Fallback: Force first one available
+                                if (!bestSource) {
+                                     bestSource = &info.mediaSources[0];
+                                }
+                                
+                                const auto& source = *bestSource;
+                                
+                                if (source.supportsDirectPlay || source.supportsDirectStream) {
+                                    finalUrl = source.directStreamUrl;
+                                    brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
+                                } else if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
+                                    finalUrl = source.transcodingUrl;
+                                    brls::Logger::info("Using Transcoding: {}", finalUrl);
+                                } else {
+                                    // Local decoding fallback
+                                    if (!source.directStreamUrl.empty()) {
+                                         finalUrl = source.directStreamUrl;
+                                         brls::Application::notify("Forcing Direct Play (Local Decode)");
+                                    } else {
+                                        brls::Application::notify("Format not supported");
+                                        return;
+                                    }
+                                }
+                                
+                                brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
+                            } else {
+                                brls::Application::notify("Failed to get playback info");
                             }
-                            
-                            brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
-                        } else {
-                            brls::Application::notify("Failed to get playback info");
-                        }
+                        });
                     });
                     return true;
                 });
