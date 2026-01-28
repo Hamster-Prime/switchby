@@ -13,28 +13,17 @@ public:
         tabFrame->setTitle("SwitchBy");
         
         // Tab 1: Home
-        tabFrame->addTab("🏠 Home", new HomeTab());
+        // addTab expects a TabViewCreator (lambda returning View*)
+        tabFrame->addTab("🏠 Home", []() { return new HomeTab(); });
         
         // Tab 2: Search
-        brls::Box* searchTab = new brls::Box();
-        searchTab->setJustifyContent(brls::JustifyContent::CENTER);
-        searchTab->setAlignItems(brls::AlignItems::CENTER);
-        
-        brls::Button* btnSearch = new brls::Button();
-        btnSearch->setLabel("🔍 Open Search");
-        btnSearch->setStyle(brls::ButtonStyle::PRIMARY);
-        btnSearch->registerClickAction([](brls::View* view) {
-            brls::Application::pushActivity(new SearchActivity());
-            return true;
-        });
-        searchTab->addView(btnSearch);
-        tabFrame->addTab("🔍 Search", searchTab);
+        tabFrame->addTab("🔍 Search", []() { return new SearchActivity(); });
 
         // Separator
         tabFrame->addSeparator();
 
         // Tab 3: Settings
-        tabFrame->addTab("⚙️ Settings", new SettingsTab());
+        tabFrame->addTab("⚙️ Settings", []() { return new SettingsTab(); });
 
         this->setContentView(tabFrame);
     }

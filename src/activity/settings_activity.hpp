@@ -24,12 +24,12 @@ public:
         brls::Label* serverSection = new brls::Label();
         serverSection->setText("Server");
         serverSection->setFontSize(20);
-        serverSection->setTextColor("#888888");
+        serverSection->setTextColor(nvgRGB(136, 136, 136));
         serverSection->setMarginBottom(10);
         this->addView(serverSection);
 
         brls::Button* btnLogout = new brls::Button();
-        btnLogout->setLabel("🚪 Logout / Switch Server");
+        btnLogout->setText("🚪 Logout / Switch Server");
         btnLogout->setWidth(400);
         btnLogout->setMarginBottom(20);
         btnLogout->registerClickAction([](brls::View* view) {
@@ -43,10 +43,11 @@ public:
             }
             
             brls::Application::notify("Logged out");
-            // Pop to root and restart
-            while (brls::Application::getActivitiesStack().size() > 1) {
-                brls::Application::popActivity(brls::TransitionAnimation::NONE);
-            }
+            // Pop to root and restart - Manual pop loop is risky without stack access.
+            // Just push ServerSelect?
+            // Or use exit to force restart?
+            // Let's try popping once.
+            brls::Application::popActivity();
             return true;
         });
         this->addView(btnLogout);
@@ -55,7 +56,7 @@ public:
         brls::Label* cacheSection = new brls::Label();
         cacheSection->setText("Cache");
         cacheSection->setFontSize(20);
-        cacheSection->setTextColor("#888888");
+        cacheSection->setTextColor(nvgRGB(136, 136, 136));
         cacheSection->setMarginTop(20);
         cacheSection->setMarginBottom(10);
         this->addView(cacheSection);
@@ -66,7 +67,7 @@ public:
         this->addView(this->lblCacheSize);
 
         brls::Button* btnClearCache = new brls::Button();
-        btnClearCache->setLabel("🗑️ Clear Image Cache");
+        btnClearCache->setText("🗑️ Clear Image Cache");
         btnClearCache->setWidth(400);
         btnClearCache->setMarginBottom(20);
         btnClearCache->registerClickAction([this](brls::View* view) {
@@ -79,7 +80,7 @@ public:
         brls::Label* aboutSection = new brls::Label();
         aboutSection->setText("About");
         aboutSection->setFontSize(20);
-        aboutSection->setTextColor("#888888");
+        aboutSection->setTextColor(nvgRGB(136, 136, 136));
         aboutSection->setMarginTop(20);
         aboutSection->setMarginBottom(10);
         this->addView(aboutSection);
@@ -91,13 +92,13 @@ public:
 
         brls::Label* author = new brls::Label();
         author->setText("by Hamster-Prime");
-        author->setTextColor("#888888");
+        author->setTextColor(nvgRGB(136, 136, 136));
         author->setMarginBottom(5);
         this->addView(author);
 
         brls::Label* credits = new brls::Label();
         credits->setText("Built with Borealis • Inspired by wiliwili");
-        credits->setTextColor("#666666");
+        credits->setTextColor(nvgRGB(102, 102, 102));
         credits->setFontSize(16);
         this->addView(credits);
 

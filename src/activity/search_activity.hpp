@@ -10,51 +10,38 @@ public:
     {
         brls::Box* container = new brls::Box();
         container->setAxis(brls::Axis::COLUMN);
-        container->setPadding(30);
+        container->setPadding(20);
 
-        // Search bar
-        brls::Box* searchBar = new brls::Box();
-        searchBar->setAxis(brls::Axis::ROW);
-        searchBar->setMarginBottom(20);
-        searchBar->setAlignItems(brls::AlignItems::CENTER);
-
+        // Search Bar
         this->btnSearch = new brls::Button();
-        this->btnSearch->setLabel("🔍 Tap to search...");
-        this->btnSearch->setWidth(500);
-        this->btnSearch->setStyle(brls::ButtonStyle::BORDERED);
-        searchBar->addView(this->btnSearch);
+        this->btnSearch->setText("🔍 Tap to search...");
+        this->btnSearch->setWidth(600);
+        this->btnSearch->setStyle(&brls::BUTTONSTYLE_BORDERED);
+        this->btnSearch->registerClickAction([this](brls::View* view) {
+            this->openKeyboard();
+            return true;
+        });
+        
+        brls::Box* searchBox = new brls::Box();
+        searchBox->setJustifyContent(brls::JustifyContent::CENTER);
+        searchBox->addView(this->btnSearch);
+        searchBox->setMarginBottom(30);
+        container->addView(searchBox);
 
-        container->addView(searchBar);
-
-        // Status
         this->statusLabel = new brls::Label();
-        this->statusLabel->setText("Enter a search term above");
-        this->statusLabel->setTextColor("#888888");
+        this->statusLabel->setText("Enter text to search");
+        this->statusLabel->setTextColor(nvgRGB(136, 136, 136));
         this->statusLabel->setMarginBottom(20);
         container->addView(this->statusLabel);
 
-        // Results grid
+        // Grid for results
         this->grid = new brls::Box();
         this->grid->setAxis(brls::Axis::ROW);
-        this->grid->setWrap(true);
+        // this->grid->setWrap(true); // removed as not supported
         this->grid->setJustifyContent(brls::JustifyContent::FLEX_START);
         container->addView(this->grid);
 
         return container;
-    }
-
-    void onContentAvailable() override
-    {
-        this->btnSearch->registerClickAction([this](brls::View* view) {
-            brls::Application::getPlatform()->getImeManager()->openForText(
-                [this](std::string text) {
-                    if (text.empty()) return;
-                    this->performSearch(text);
-                },
-                "Search media...", "", 100
-            );
-            return true;
-        });
     }
 
 private:
@@ -62,24 +49,44 @@ private:
     brls::Label* statusLabel;
     brls::Box* grid;
 
+    void openKeyboard() {
+        brls::Application::getPlatform()->getInputManager()->openForText(
+            [this](std::string text) {
+                if (text.empty()) return;
+                this->performSearch(text);
+            },
+            "Search Emby",
+            "",
+            100
+        );
+    }
+
     void performSearch(const std::string& query) {
-        this->btnSearch->setLabel("🔍 " + query);
+        this->btnSearch->setText("🔍 " + query);
         this->statusLabel->setText("Searching...");
-        this->grid->clearViews();
+        
+        // Manual clear
+        auto children = this->grid->getChildren();
+        for (auto child : children) this->grid->removeView(child);
 
         EmbyClient::instance().search(query, [this](bool success, const std::vector<EmbyClient::EmbyItem>& items) {
-            if (success) {
-                if (items.empty()) {
-                    this->statusLabel->setText("No results found");
-                } else {
-                    this->statusLabel->setText("Found " + std::to_string(items.size()) + " results");
+            brls::sync([this, success, items]() {
+                if (success) {
+                    this->statusLabel->setVisibility(brls::Visibility::GONE);
+                    
+                    if (items.empty()) {
+                        this->statusLabel->setText("No results found");
+                        this->statusLabel->setVisibility(brls::Visibility::VISIBLE);
+                        return;
+                    }
+
                     for (const auto& item : items) {
                         this->grid->addView(new PosterCell(item));
                     }
+                } else {
+                    this->statusLabel->setText("Search failed");
                 }
-            } else {
-                this->statusLabel->setText("Search failed");
-            }
+            });
         });
     }
 };
