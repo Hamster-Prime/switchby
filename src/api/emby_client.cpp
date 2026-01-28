@@ -213,18 +213,16 @@ static size_t WriteToFileCallback(void* contents, size_t size, size_t nmemb, voi
     return size * nmemb;
 }
 
-void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb) {
+void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb, const std::string& type) {
     // Determine cache path
-    // Assuming we can write to ./cache for now (in switch usually sdmc:/switch/switchby/cache)
     std::string cacheDir = "cache";
     #ifdef __SWITCH__
     cacheDir = "/switch/switchby/cache";
     #endif
     
-    // Create dir if not exists (simple check)
     mkdir(cacheDir.c_str(), 0777);
     
-    std::string filename = cacheDir + "/" + itemId + ".jpg";
+    std::string filename = cacheDir + "/" + itemId + "_" + type + ".jpg";
     
     // Check if file exists
     struct stat buffer;
@@ -233,7 +231,9 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
         return;
     }
 
-    std::string endpoint = "/Items/" + itemId + "/Images/Primary?tag=" + tag + "&MaxWidth=400&Quality=90";
+    // Adjust max width based on type
+    int maxWidth = (type == "Backdrop") ? 1280 : 400;
+    std::string endpoint = "/Items/" + itemId + "/Images/" + type + "?tag=" + tag + "&MaxWidth=" + std::to_string(maxWidth) + "&Quality=90";
     
     std::thread([this, endpoint, filename, cb]() {
         CURL* curl;
@@ -269,4 +269,37 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
             });
         }
     }).detach();
+}
+void EmbyClient::getItem(const std::string& itemId, std::function<void(bool success, const EmbyItem& item)> cb) {
+    std::string endpoint = "/Users/" + this->userId + "/Items/" + itemId;
+    
+    this->get(endpoint, [cb](bool success, const json& jItem) {
+        if (success) {
+            EmbyItem item;
+            try {
+                item.id = jItem.value("Id", "");
+                item.name = jItem.value("Name", "Unknown");
+                item.type = jItem.value("Type", "");
+                item.overview = jItem.value("Overview", "");
+                item.productionYear = jItem.value("ProductionYear", 0);
+                item.communityRating = jItem.value("CommunityRating", 0.0);
+                
+                if (jItem.contains("ImageTags")) {
+                    if (jItem["ImageTags"].contains("Primary")) {
+                        item.primaryImageTag = jItem["ImageTags"]["Primary"];
+                    }
+                    // For backdrops, it's usually an array "Backdrops" which is a list of tags.
+                    // But typically in item details "BackdropImageTags" is a list.
+                    if (jItem.contains("BackdropImageTags") && jItem["BackdropImageTags"].is_array() && !jItem["BackdropImageTags"].empty()) {
+                         item.backdropImageTag = jItem["BackdropImageTags"][0];
+                    }
+                }
+            } catch (...) {
+                brls::Logger::error("Failed to parse item details");
+            }
+            cb(true, item);
+        } else {
+            cb(false, EmbyItem{});
+        }
+    });
 }

@@ -35,6 +35,10 @@ public:
         std::string type;
         std::string collectionType;
         std::string primaryImageTag;
+        std::string backdropImageTag;
+        std::string overview;
+        int productionYear = 0;
+        double communityRating = 0.0;
     };
 
     // Get User Views (Home screen libraries)
@@ -43,9 +47,12 @@ public:
     // Get Items in a parent (Library contents)
     void getItems(const std::string& parentId, std::function<void(bool success, const std::vector<EmbyItem>& items)> cb);
 
+    // Get specific item details
+    void getItem(const std::string& itemId, std::function<void(bool success, const EmbyItem& item)> cb);
+
     // Download image to memory (or file)
-    // For simplicity, we'll download to a file and return the path
-    void downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb);
+    // type defaults to "Primary", index defaults to 0
+    void downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb, const std::string& type = "Primary");
 
     std::string getUserId() const { return userId; }
     std::string getAccessToken() const { return accessToken; }

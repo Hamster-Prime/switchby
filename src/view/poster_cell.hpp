@@ -1,6 +1,7 @@
 #pragma once
 #include <borealis.hpp>
 #include "api/emby_client.hpp"
+#include "activity/detail_activity.hpp"
 
 class PosterCell : public brls::Box
 {
@@ -30,7 +31,7 @@ public:
 
         // Make clickable
         this->registerClickAction([item](brls::View* view) {
-            brls::Application::notify("Playing: " + item.name);
+            brls::Application::pushActivity(new DetailActivity(item.id));
             return true;
         });
 
