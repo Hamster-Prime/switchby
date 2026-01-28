@@ -1,0 +1,38 @@
+<brls:Box
+    width="auto"
+    height="auto"
+    axis="column"
+    justifyContent="center"
+    alignItems="center">
+
+    <brls:Label
+        text="Login"
+        fontSize="32"
+        marginBottom="20" />
+
+    <brls:Label
+        id="lbl_server_name"
+        text="Connecting to..."
+        fontSize="18"
+        textColor="#888888"
+        marginBottom="40" />
+
+    <brls:Button
+        id="btn_username"
+        text="Username"
+        marginBottom="10" 
+        width="300" />
+
+    <brls:Button
+        id="btn_password"
+        text="Password"
+        marginBottom="30" 
+        width="300" />
+
+    <brls:Button
+        id="btn_login"
+        text="Sign In"
+        style="primary"
+        width="300" />
+
+</brls:Box>

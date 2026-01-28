@@ -1,13 +1,7 @@
 #include <borealis.hpp>
-#include <string>
+#include "activity/server_select_activity.hpp"
 
 using namespace brls::literals;
-
-class MainActivity : public brls::Activity
-{
-public:
-    CONTENT_FROM_XML_RES("activity/main.xml");
-};
 
 int main(int argc, char* argv[])
 {
@@ -22,7 +16,7 @@ int main(int argc, char* argv[])
     }
 
     // Creating views
-    brls::Application::pushActivity(new MainActivity());
+    brls::Application::pushActivity(new ServerSelectActivity());
 
     // Run the app
     while (brls::Application::mainLoop());
