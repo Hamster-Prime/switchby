@@ -1,4 +1,5 @@
 #include "emby_client.hpp"
+#include "utils/thread_pool.hpp"
 #include <curl/curl.h>
 #include <borealis.hpp>
 #include <thread>
@@ -42,7 +43,7 @@ void EmbyClient::authenticate(const std::string& username, const std::string& pa
 
     std::string endpoint = "/Users/AuthenticateByName";
     
-    std::thread([this, endpoint, body, cb]() {
+    ThreadPool::instance().submit([this, endpoint, body, cb]() {
         CURL* curl;
         CURLcode res;
         std::string readBuffer;
@@ -93,7 +94,7 @@ void EmbyClient::authenticate(const std::string& username, const std::string& pa
         } else {
             brls::sync([cb]() { cb(false, "", "Init failed"); });
         }
-    }).detach();
+    });
 }
 
 void EmbyClient::getUserViews(std::function<void(bool success, const std::vector<EmbyItem>& items)> cb) {
@@ -125,8 +126,9 @@ void EmbyClient::getUserViews(std::function<void(bool success, const std::vector
     });
 }
 
+// Helper to perform HTTP GET
 void EmbyClient::get(const std::string& endpoint, std::function<void(bool success, const json& response)> cb) {
-    std::thread([this, endpoint, cb]() {
+    ThreadPool::instance().submit([this, endpoint, cb]() {
         CURL* curl;
         CURLcode res;
         std::string readBuffer;
@@ -235,7 +237,7 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
     int maxWidth = (type == "Backdrop") ? 1280 : 400;
     std::string endpoint = "/Items/" + itemId + "/Images/" + type + "?tag=" + tag + "&MaxWidth=" + std::to_string(maxWidth) + "&Quality=90";
     
-    std::thread([this, endpoint, filename, cb]() {
+    ThreadPool::instance().submit([this, endpoint, filename, cb]() {
         CURL* curl;
         CURLcode res;
 
@@ -385,7 +387,7 @@ void EmbyClient::search(const std::string& query, std::function<void(bool succes
 
 // Helper to perform HTTP POST
 void EmbyClient::post(const std::string& endpoint, const json& body, std::function<void(bool success, const json& response)> cb) {
-    std::thread([this, endpoint, body, cb]() {
+    ThreadPool::instance().submit([this, endpoint, body, cb]() {
         CURL* curl;
         CURLcode res;
         std::string readBuffer;
