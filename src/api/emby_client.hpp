@@ -57,6 +57,24 @@ public:
     void reportPlaybackStart(const std::string& itemId);
     void reportPlaybackProgress(const std::string& itemId, long positionTicks, bool isPaused);
     void reportPlaybackStopped(const std::string& itemId, long positionTicks);
+    
+    // Playback Info
+    struct MediaSource {
+        std::string id;
+        std::string container;
+        bool supportsDirectPlay = true;
+        bool supportsDirectStream = true;
+        bool supportsTranscoding = true;
+        std::string transcodingUrl;
+        std::string directStreamUrl;
+    };
+    
+    struct PlaybackInfo {
+        std::string playSessionId;
+        std::vector<MediaSource> mediaSources;
+    };
+
+    void getPlaybackInfo(const std::string& itemId, std::function<void(bool success, const PlaybackInfo& info)> cb);
 
     // Download image to memory (or file)
     // type defaults to "Primary", index defaults to 0

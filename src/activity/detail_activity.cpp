@@ -132,9 +132,31 @@ void DetailActivity::onContentAvailable() {
             } else {
                 this->btnPlay->setLabel("▶ Play");
                 this->btnPlay->registerClickAction([this, item](brls::View* view) {
-                    std::string playUrl = EmbyClient::instance().getPlaybackUrl(item.id);
-                    brls::Logger::info("Playing: {}", playUrl);
-                    brls::Application::pushActivity(new PlayerActivity(playUrl, item.id));
+                    brls::Application::notify("Loading playback info...");
+                    
+                    EmbyClient::instance().getPlaybackInfo(item.id, [this, item](bool success, const EmbyClient::PlaybackInfo& info) {
+                        if (success && !info.mediaSources.empty()) {
+                            // Simple logic: Pick first source. 
+                            // If DirectPlay supported, use it. Else use TranscodingUrl.
+                            std::string finalUrl;
+                            const auto& source = info.mediaSources[0];
+                            
+                            if (source.supportsDirectPlay || source.supportsDirectStream) {
+                                finalUrl = source.directStreamUrl;
+                                brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
+                            } else if (source.supportsTranscoding && !source.transcodingUrl.empty()) {
+                                finalUrl = source.transcodingUrl;
+                                brls::Logger::info("Using Transcoding: {}", finalUrl);
+                            } else {
+                                brls::Application::notify("Format not supported on Switch");
+                                return;
+                            }
+                            
+                            brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
+                        } else {
+                            brls::Application::notify("Failed to get playback info");
+                        }
+                    });
                     return true;
                 });
             }
