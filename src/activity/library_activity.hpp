@@ -7,17 +7,26 @@ class LibraryActivity : public brls::Activity
 {
 public:
     LibraryActivity(std::string libraryName, std::string libraryId) 
-        : libraryName(libraryName), libraryId(libraryId)
+        : libraryName(libraryName), libraryId(libraryId) {}
+
+    brls::View* createContentView() override
     {
         brls::Box* container = new brls::Box();
         container->setAxis(brls::Axis::COLUMN);
         container->setPadding(20);
 
+        // Header
+        brls::Box* header = new brls::Box();
+        header->setAxis(brls::Axis::ROW);
+        header->setAlignItems(brls::AlignItems::CENTER);
+        header->setMarginBottom(20);
+
         brls::Label* title = new brls::Label();
         title->setText(this->libraryName);
         title->setFontSize(28);
-        title->setMarginBottom(20);
-        container->addView(title);
+        header->addView(title);
+
+        container->addView(header);
 
         this->statusLabel = new brls::Label();
         this->statusLabel->setText("Loading items...");
@@ -26,26 +35,12 @@ public:
 
         // Grid for items
         this->grid = new brls::Box();
-        this->grid->setDirection(brls::Direction::LEFT_TO_RIGHT);
+        this->grid->setAxis(brls::Axis::ROW);
         this->grid->setWrap(true);
         this->grid->setJustifyContent(brls::JustifyContent::FLEX_START);
-        
-        // Wrap grid in a scrolling frame
-        brls::AppletFrame* frame = new brls::AppletFrame(container);
-        frame->setContentView(this->grid);
-        
-        // Note: AppletFrame usually manages the header/content structure. 
-        // For simplicity in this raw impl, we add grid to container, and container to view.
-        // But for scrolling, let's use a wrapper logic or assume Borealis handles scrolling if content overflows.
-        // Actually, AppletFrame is a high level component. Let's just use the Activity's default content view which handles scrolling if configured or use a ScrollView.
-        // Borealis's Activity::setContentView usually takes a view. 
-        
-        // Let's use a ScrollView for safety if list is long
-        // (Assuming standard Borealis components available, if not, standard Box usually scrolls in some contexts or needs a parent)
-        // We'll stick to a simple Box for now, Borealis automatic navigation usually handles it.
-        
         container->addView(this->grid);
-        this->setContentView(container);
+
+        return container;
     }
 
     void onContentAvailable() override
@@ -55,7 +50,7 @@ public:
                 this->statusLabel->setVisibility(brls::Visibility::GONE);
                 
                 if (items.empty()) {
-                    this->statusLabel->setText("No items found.");
+                    this->statusLabel->setText("No items found");
                     this->statusLabel->setVisibility(brls::Visibility::VISIBLE);
                     return;
                 }
@@ -64,7 +59,7 @@ public:
                     this->grid->addView(new PosterCell(item));
                 }
             } else {
-                this->statusLabel->setText("Failed to load items.");
+                this->statusLabel->setText("Failed to load items");
             }
         });
     }

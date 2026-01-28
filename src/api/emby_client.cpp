@@ -309,3 +309,76 @@ std::string EmbyClient::getPlaybackUrl(const std::string& itemId) {
     // But for MVP mpv usually handles direct streams well
     return this->baseUrl + "/Videos/" + itemId + "/stream?static=true&MediaSourceId=" + itemId + "&PlaySessionId=switchby-" + itemId + "&api_key=" + this->accessToken;
 }
+
+void EmbyClient::getResumeItems(std::function<void(bool success, const std::vector<EmbyItem>& items)> cb) {
+    std::string endpoint = "/Users/" + this->userId + "/Items/Resume?Limit=12&Fields=PrimaryImageAspectRatio,ImageTags&MediaTypes=Video";
+    
+    this->get(endpoint, [cb](bool success, const json& resp) {
+        if (success) {
+            std::vector<EmbyItem> items;
+            try {
+                if (resp.contains("Items") && resp["Items"].is_array()) {
+                    for (const auto& jItem : resp["Items"]) {
+                        EmbyItem item;
+                        item.id = jItem.value("Id", "");
+                        item.name = jItem.value("Name", "Unknown");
+                        item.type = jItem.value("Type", "");
+                        if (jItem.contains("ImageTags") && jItem["ImageTags"].contains("Primary")) {
+                            item.primaryImageTag = jItem["ImageTags"]["Primary"];
+                        }
+                        items.push_back(item);
+                    }
+                }
+            } catch (...) {
+                brls::Logger::error("Failed to parse resume items");
+            }
+            cb(true, items);
+        } else {
+            cb(false, {});
+        }
+    });
+}
+
+void EmbyClient::search(const std::string& query, std::function<void(bool success, const std::vector<EmbyItem>& items)> cb) {
+    // URL encode query (simple version)
+    std::string encoded;
+    for (char c : query) {
+        if (isalnum(c) || c == '-' || c == '_' || c == '.') {
+            encoded += c;
+        } else if (c == ' ') {
+            encoded += "%20";
+        } else {
+            char buf[4];
+            snprintf(buf, sizeof(buf), "%%%02X", (unsigned char)c);
+            encoded += buf;
+        }
+    }
+    
+    std::string endpoint = "/Users/" + this->userId + "/Items?SearchTerm=" + encoded + "&Recursive=true&Fields=ImageTags,PrimaryImageAspectRatio&Limit=50&IncludeItemTypes=Movie,Series,Episode";
+    
+    this->get(endpoint, [cb](bool success, const json& resp) {
+        if (success) {
+            std::vector<EmbyItem> items;
+            try {
+                if (resp.contains("Items") && resp["Items"].is_array()) {
+                    for (const auto& jItem : resp["Items"]) {
+                        EmbyItem item;
+                        item.id = jItem.value("Id", "");
+                        item.name = jItem.value("Name", "Unknown");
+                        item.type = jItem.value("Type", "");
+                        item.productionYear = jItem.value("ProductionYear", 0);
+                        if (jItem.contains("ImageTags") && jItem["ImageTags"].contains("Primary")) {
+                            item.primaryImageTag = jItem["ImageTags"]["Primary"];
+                        }
+                        items.push_back(item);
+                    }
+                }
+            } catch (...) {
+                brls::Logger::error("Failed to parse search results");
+            }
+            cb(true, items);
+        } else {
+            cb(false, {});
+        }
+    });
+}

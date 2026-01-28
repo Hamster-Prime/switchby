@@ -1,0 +1,14 @@
+# Target labels
+ nanovg-populate
+# Source files and their labels
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/CMakeFiles/nanovg-populate
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/CMakeFiles/nanovg-populate.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/CMakeFiles/nanovg-populate-complete.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-build.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-configure.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-download.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-install.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-mkdir.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-patch.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-test.rule
+/home/mohan/clawd/switchby/build/_deps/nanovg-subbuild/nanovg-populate-prefix/src/nanovg-populate-stamp/nanovg-populate-update.rule

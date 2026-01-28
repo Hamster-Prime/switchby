@@ -60,6 +60,18 @@ public:
     std::string getUserId() const { return userId; }
     std::string getAccessToken() const { return accessToken; }
 
+    // Set credentials for auto-login
+    void setCredentials(const std::string& uid, const std::string& token) {
+        this->userId = uid;
+        this->accessToken = token;
+    }
+
+    // Get "Continue Watching" items
+    void getResumeItems(std::function<void(bool success, const std::vector<EmbyItem>& items)> cb);
+
+    // Search media
+    void search(const std::string& query, std::function<void(bool success, const std::vector<EmbyItem>& items)> cb);
+
 private:
     EmbyClient() = default;
     std::string baseUrl;

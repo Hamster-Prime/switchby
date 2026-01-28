@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/CMakeFiles/borealis-populate"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/CMakeFiles/borealis-populate.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/CMakeFiles/borealis-populate-complete.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-build.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-configure.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-download.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-install.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-patch.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-test.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/borealis-subbuild/borealis-populate-prefix/src/borealis-populate-stamp/borealis-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"borealis-populate"
+		],
+		"name" : "borealis-populate"
+	}
+}

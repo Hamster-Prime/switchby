@@ -1,6 +1,8 @@
 #pragma once
 #include <borealis.hpp>
 #include "activity/home_tab.hpp"
+#include "activity/search_activity.hpp"
+#include "activity/settings_activity.hpp"
 
 class TabActivity : public brls::Activity
 {
@@ -10,32 +12,29 @@ public:
         brls::TabFrame* tabFrame = new brls::TabFrame();
         tabFrame->setTitle("SwitchBy");
         
-        // Tab 1: Home (Now uses our dynamic HomeTab class)
-        tabFrame->addTab("Home", new HomeTab());
+        // Tab 1: Home
+        tabFrame->addTab("🏠 Home", new HomeTab());
         
-        // Tab 2: Library
-        brls::Box* libraryView = new brls::Box();
-        libraryView->setJustifyContent(brls::JustifyContent::CENTER);
-        libraryView->setAlignItems(brls::AlignItems::CENTER);
-        libraryView->addView(new brls::Label("My Media"));
-        tabFrame->addTab("Library", libraryView);
-
-        // Tab 3: Collections
-        brls::Box* collectionsView = new brls::Box();
-        collectionsView->setJustifyContent(brls::JustifyContent::CENTER);
-        collectionsView->setAlignItems(brls::AlignItems::CENTER);
-        collectionsView->addView(new brls::Label("Collections"));
-        tabFrame->addTab("Collections", collectionsView);
+        // Tab 2: Search
+        brls::Box* searchTab = new brls::Box();
+        searchTab->setJustifyContent(brls::JustifyContent::CENTER);
+        searchTab->setAlignItems(brls::AlignItems::CENTER);
+        
+        brls::Button* btnSearch = new brls::Button();
+        btnSearch->setLabel("🔍 Open Search");
+        btnSearch->setStyle(brls::ButtonStyle::PRIMARY);
+        btnSearch->registerClickAction([](brls::View* view) {
+            brls::Application::pushActivity(new SearchActivity());
+            return true;
+        });
+        searchTab->addView(btnSearch);
+        tabFrame->addTab("🔍 Search", searchTab);
 
         // Separator
         tabFrame->addSeparator();
 
-        // Tab 4: Settings
-        brls::Box* settingsView = new brls::Box();
-        settingsView->setJustifyContent(brls::JustifyContent::CENTER);
-        settingsView->setAlignItems(brls::AlignItems::CENTER);
-        settingsView->addView(new brls::Label("Settings"));
-        tabFrame->addTab("Settings", settingsView);
+        // Tab 3: Settings
+        tabFrame->addTab("⚙️ Settings", new SettingsTab());
 
         this->setContentView(tabFrame);
     }

@@ -3,7 +3,29 @@
 #include "activity/player_activity.hpp"
 #include "api/emby_client.hpp"
 
-DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {
+DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {}
+
+brls::View* DetailActivity::createContentView() {
+    // Root with backdrop
+    brls::Box* root = new brls::Box();
+    root->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
+    
+    // Backdrop image (full width, cropped)
+    this->backdropImage = new brls::Image();
+    this->backdropImage->setDimensions(brls::Application::contentWidth, 350);
+    this->backdropImage->setContentMode(brls::ContentMode::SCALE_ASPECT_FILL);
+    this->backdropImage->setVisibility(brls::Visibility::GONE);
+    root->addView(this->backdropImage);
+
+    // Gradient overlay on backdrop
+    brls::Box* gradientOverlay = new brls::Box();
+    gradientOverlay->setDimensions(brls::Application::contentWidth, 350);
+    gradientOverlay->setPosition(0, 0);
+    // Note: Real gradient would need custom draw, using semi-transparent box for now
+    gradientOverlay->setBackgroundColor(brls::RGBA(20, 20, 25, 180));
+    root->addView(gradientOverlay);
+
+    // Main content container
     brls::Box* container = new brls::Box();
     container->setAxis(brls::Axis::ROW);
     container->setPadding(40);
@@ -12,15 +34,15 @@ DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {
 
     // Left: Poster
     this->posterBox = new brls::Box();
-    this->posterBox->setDimensions(300, 450);
-    this->posterBox->setBackgroundColor(brls::RGB(30, 30, 30));
-    this->posterBox->setCornerRadius(8);
+    this->posterBox->setDimensions(280, 420);
+    this->posterBox->setBackgroundColor(brls::RGB(30, 30, 35));
+    this->posterBox->setCornerRadius(12);
     this->posterBox->setMarginRight(40);
     
     this->posterImage = new brls::Image();
-    this->posterImage->setDimensions(300, 450);
+    this->posterImage->setDimensions(280, 420);
     this->posterImage->setContentMode(brls::ContentMode::SCALE_ASPECT_FILL);
-    this->posterImage->setCornerRadius(8);
+    this->posterImage->setCornerRadius(12);
     this->posterBox->addView(this->posterImage);
     
     container->addView(this->posterBox);
@@ -42,18 +64,18 @@ DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {
     this->lblMeta->setText("");
     this->lblMeta->setFontSize(20);
     this->lblMeta->setTextColor("#AAAAAA");
-    this->lblMeta->setMarginBottom(20);
+    this->lblMeta->setMarginBottom(25);
     detailsBox->addView(this->lblMeta);
 
     // Buttons Row
     brls::Box* buttonRow = new brls::Box();
-    buttonRow->setDirection(brls::Direction::LEFT_TO_RIGHT);
+    buttonRow->setAxis(brls::Axis::ROW);
     buttonRow->setMarginBottom(30);
 
     this->btnPlay = new brls::Button();
-    this->btnPlay->setLabel("Play");
+    this->btnPlay->setLabel("▶ Play");
     this->btnPlay->setStyle(brls::ButtonStyle::PRIMARY);
-    // Action is set in onContentAvailable based on type
+    this->btnPlay->setWidth(180);
     buttonRow->addView(this->btnPlay);
 
     detailsBox->addView(buttonRow);
@@ -61,44 +83,57 @@ DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {
     // Overview
     this->lblOverview = new brls::Label();
     this->lblOverview->setText("");
-    this->lblOverview->setFontSize(18);
+    this->lblOverview->setFontSize(17);
     this->lblOverview->setTextColor("#CCCCCC");
+    this->lblOverview->setMaxWidth(700);
     detailsBox->addView(this->lblOverview);
 
     container->addView(detailsBox);
-    this->setContentView(container);
+    root->addView(container);
+
+    return root;
 }
 
 void DetailActivity::onContentAvailable() {
-    // Fetch details
     EmbyClient::instance().getItem(this->itemId, [this](bool success, const EmbyClient::EmbyItem& item) {
         if (success) {
             this->lblTitle->setText(item.name);
             
-            std::string meta = std::to_string(item.productionYear);
+            std::string meta;
+            if (item.productionYear > 0) {
+                meta = std::to_string(item.productionYear);
+            }
             if (item.communityRating > 0) {
                 char ratingBuf[16];
                 snprintf(ratingBuf, sizeof(ratingBuf), "%.1f", item.communityRating);
-                meta += "  |  ★ " + std::string(ratingBuf);
+                if (!meta.empty()) meta += "  •  ";
+                meta += "★ " + std::string(ratingBuf);
+            }
+            if (!item.type.empty()) {
+                if (!meta.empty()) meta += "  •  ";
+                meta += item.type;
             }
             this->lblMeta->setText(meta);
             this->lblOverview->setText(item.overview);
 
-            // Logic for Type
-            if (item.type == "Series" || item.type == "Season") {
-                if (item.type == "Series") this->btnPlay->setLabel("View Seasons");
-                else this->btnPlay->setLabel("View Episodes");
-                
+            // Button logic based on type
+            if (item.type == "Series") {
+                this->btnPlay->setLabel("📺 Seasons");
                 this->btnPlay->registerClickAction([item](brls::View* view) {
-                    // Open LibraryActivity for this parent
+                    brls::Application::pushActivity(new LibraryActivity(item.name, item.id));
+                    return true;
+                });
+            } else if (item.type == "Season") {
+                this->btnPlay->setLabel("📺 Episodes");
+                this->btnPlay->registerClickAction([item](brls::View* view) {
                     brls::Application::pushActivity(new LibraryActivity(item.name, item.id));
                     return true;
                 });
             } else {
-                this->btnPlay->setLabel("Play");
+                this->btnPlay->setLabel("▶ Play");
                 this->btnPlay->registerClickAction([this, item](brls::View* view) {
                     std::string playUrl = EmbyClient::instance().getPlaybackUrl(item.id);
-                    brls::Logger::info("Playing URL: {}", playUrl);
+                    brls::Logger::info("Playing: {}", playUrl);
                     brls::Application::pushActivity(new PlayerActivity(playUrl));
                     return true;
                 });
@@ -109,6 +144,16 @@ void DetailActivity::onContentAvailable() {
                 EmbyClient::instance().downloadImage(item.id, item.primaryImageTag, [this](bool ok, const std::string& path) {
                     if (ok) this->posterImage->setImageFromFile(path);
                 });
+            }
+
+            // Load Backdrop
+            if (!item.backdropImageTag.empty()) {
+                EmbyClient::instance().downloadImage(item.id, item.backdropImageTag, [this](bool ok, const std::string& path) {
+                    if (ok) {
+                        this->backdropImage->setImageFromFile(path);
+                        this->backdropImage->setVisibility(brls::Visibility::VISIBLE);
+                    }
+                }, "Backdrop");
             }
         } else {
             this->lblTitle->setText("Error loading details");

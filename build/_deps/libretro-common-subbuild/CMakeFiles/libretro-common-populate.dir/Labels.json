@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/CMakeFiles/libretro-common-populate"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/CMakeFiles/libretro-common-populate.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/CMakeFiles/libretro-common-populate-complete.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-build.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-configure.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-download.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-install.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-patch.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-test.rule"
+		},
+		{
+			"file" : "/home/mohan/clawd/switchby/build/_deps/libretro-common-subbuild/libretro-common-populate-prefix/src/libretro-common-populate-stamp/libretro-common-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"libretro-common-populate"
+		],
+		"name" : "libretro-common-populate"
+	}
+}
