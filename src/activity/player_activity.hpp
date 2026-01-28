@@ -6,7 +6,7 @@
 class PlayerActivity : public brls::Activity
 {
 public:
-    PlayerActivity(std::string url);
+    PlayerActivity(std::string url, std::string itemId);
     ~PlayerActivity();
 
     brls::View* createContentView() override;
@@ -15,6 +15,7 @@ public:
 
 private:
     std::string url;
+    std::string itemId;
     mpv_handle* mpv = nullptr;
     mpv_render_context* mpv_gl = nullptr;
     
@@ -32,9 +33,14 @@ private:
     double position = 0;
     int64_t lastOsdTick = 0;
     
+    // Playback reporting
+    std::chrono::steady_clock::time_point lastReportTime;
+    bool hasStartedPlayback = false;
+    
     void initMpv();
     void updateOsd();
     void togglePause();
     void seek(double seconds);
+    void reportProgress();
     std::string formatTime(double seconds);
 };

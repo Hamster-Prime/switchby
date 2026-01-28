@@ -134,7 +134,7 @@ void DetailActivity::onContentAvailable() {
                 this->btnPlay->registerClickAction([this, item](brls::View* view) {
                     std::string playUrl = EmbyClient::instance().getPlaybackUrl(item.id);
                     brls::Logger::info("Playing: {}", playUrl);
-                    brls::Application::pushActivity(new PlayerActivity(playUrl));
+                    brls::Application::pushActivity(new PlayerActivity(playUrl, item.id));
                     return true;
                 });
             }

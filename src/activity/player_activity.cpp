@@ -1,4 +1,5 @@
 #include "activity/player_activity.hpp"
+#include "api/emby_client.hpp"
 #include <borealis/core/application.hpp>
 #include <chrono>
 
@@ -16,9 +17,16 @@ static void* get_proc_address(void* ctx, const char* name) {
 #endif
 }
 
-PlayerActivity::PlayerActivity(std::string url) : url(url) {}
+PlayerActivity::PlayerActivity(std::string url, std::string itemId) : url(url), itemId(itemId) {
+    this->lastReportTime = std::chrono::steady_clock::now();
+}
 
 PlayerActivity::~PlayerActivity() {
+    if (this->hasStartedPlayback) {
+        long posTicks = (long)(this->position * 10000000);
+        EmbyClient::instance().reportPlaybackStopped(this->itemId, posTicks);
+    }
+    
     if (this->mpv_gl) {
         mpv_render_context_free(this->mpv_gl);
     }
@@ -183,6 +191,11 @@ void PlayerActivity::initMpv() {
     mpv_command(this->mpv, cmd);
     
     this->lblStatus->setText("⏳ Buffering...");
+    
+    // Start playback reporting
+    EmbyClient::instance().reportPlaybackStart(this->itemId);
+    this->hasStartedPlayback = true;
+    this->lastReportTime = std::chrono::steady_clock::now();
 }
 
 void PlayerActivity::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style, brls::FrameContext* ctx) {
@@ -261,6 +274,8 @@ void PlayerActivity::updateOsd() {
         this->lblTitle->setText(title);
         mpv_free(title);
     }
+    
+    this->reportProgress();
 }
 
 void PlayerActivity::togglePause() {
@@ -268,6 +283,21 @@ void PlayerActivity::togglePause() {
     
     int pause = this->isPaused ? 0 : 1;
     mpv_set_property(this->mpv, "pause", MPV_FORMAT_FLAG, &pause);
+    
+    // Immediate report on pause/resume
+    long posTicks = (long)(this->position * 10000000);
+    EmbyClient::instance().reportPlaybackProgress(this->itemId, posTicks, pause != 0);
+}
+
+void PlayerActivity::reportProgress() {
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - this->lastReportTime).count();
+    
+    if (elapsed >= 10) { // Report every 10 seconds
+        long posTicks = (long)(this->position * 10000000);
+        EmbyClient::instance().reportPlaybackProgress(this->itemId, posTicks, this->isPaused);
+        this->lastReportTime = now;
+    }
 }
 
 void PlayerActivity::seek(double seconds) {

@@ -382,3 +382,91 @@ void EmbyClient::search(const std::string& query, std::function<void(bool succes
         }
     });
 }
+
+// Helper to perform HTTP POST
+void EmbyClient::post(const std::string& endpoint, const json& body, std::function<void(bool success, const json& response)> cb) {
+    std::thread([this, endpoint, body, cb]() {
+        CURL* curl;
+        CURLcode res;
+        std::string readBuffer;
+
+        curl = curl_easy_init();
+        if(curl) {
+            std::string url = this->baseUrl + endpoint;
+            
+            struct curl_slist *headers = NULL;
+            headers = curl_slist_append(headers, "Content-Type: application/json");
+            if (!this->accessToken.empty()) {
+                std::string tokenHeader = "X-Emby-Token: " + this->accessToken;
+                headers = curl_slist_append(headers, tokenHeader.c_str());
+            }
+            // Add standard client headers
+            headers = curl_slist_append(headers, "X-Emby-Client: SwitchBy");
+            headers = curl_slist_append(headers, "X-Emby-Device-Name: Nintendo Switch");
+            headers = curl_slist_append(headers, "X-Emby-Device-Id: SwitchByDevice");
+            headers = curl_slist_append(headers, "X-Emby-Client-Version: 0.1.0");
+
+            std::string jsonStr = body.dump();
+
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonStr.c_str());
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+
+            res = curl_easy_perform(curl);
+            
+            long http_code = 0;
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+            curl_easy_cleanup(curl);
+            curl_slist_free_all(headers);
+
+            brls::sync([res, readBuffer, http_code, cb]() {
+                if (res == CURLE_OK && (http_code == 200 || http_code == 204)) {
+                    try {
+                        if (!readBuffer.empty())
+                            cb(true, json::parse(readBuffer));
+                        else
+                            cb(true, json());
+                    } catch (...) {
+                        cb(false, nullptr);
+                    }
+                } else {
+                    brls::Logger::error("POST {} failed: {}", endpoint, http_code);
+                    cb(false, nullptr);
+                }
+            });
+        }
+    }).detach();
+}
+
+void EmbyClient::reportPlaybackStart(const std::string& itemId) {
+    json body = {
+        {"ItemId", itemId},
+        {"PlaySessionId", "switchby-" + itemId}
+    };
+    this->post("/Sessions/Playing", body, [](bool, const json&){});
+}
+
+void EmbyClient::reportPlaybackProgress(const std::string& itemId, long positionTicks, bool isPaused) {
+    json body = {
+        {"ItemId", itemId},
+        {"PlaySessionId", "switchby-" + itemId},
+        {"PositionTicks", positionTicks},
+        {"EventName", isPaused ? "Pause" : "TimeUpdate"},
+        {"IsPaused", isPaused}
+    };
+    this->post("/Sessions/Playing/Progress", body, [](bool, const json&){});
+}
+
+void EmbyClient::reportPlaybackStopped(const std::string& itemId, long positionTicks) {
+    json body = {
+        {"ItemId", itemId},
+        {"PlaySessionId", "switchby-" + itemId},
+        {"PositionTicks", positionTicks}
+    };
+    this->post("/Sessions/Playing/Stopped", body, [](bool, const json&){});
+}
