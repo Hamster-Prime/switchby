@@ -11,7 +11,14 @@ public:
         this->setDimensions(160, 280);
         this->setAxis(brls::Axis::COLUMN);
         this->setAlignItems(brls::AlignItems::CENTER);
-        this->setMargins(8, 8, 8, 8);
+        this->setMargin(8, 8, 8, 8); // Box uses setMargin(top, right, bottom, left) overload in older borealis? Or need to check.
+        // Actually header said setPadding. Box usually doesn't have setMargin? 
+        // View has setMargin. 
+        // Let's assume View::setMargin(top, right, bottom, left) exists or just setMargin(all).
+        // Wait, the error said `setMargin(8)` -> `setMargins`? No, View has setMargin(float). 
+        // Error: "class PosterCell has no member named setMargin; did you mean setMargins?"
+        // So it is setMargins.
+        this->setMargins(8, 8, 8, 8); 
         this->setFocusable(true);
 
         // Image Container with shadow effect
@@ -48,7 +55,10 @@ public:
         // Focus animation
         this->getFocusEvent()->subscribe([this](bool focused) {
             if (focused) {
-                // Border thickness removed, simpler focus
+                // Older borealis might use pointers for theme
+                // brls::Application::getTheme() might return reference or pointer
+                // Error said "Theme has no member colorPrimary". 
+                // Let's just use hardcoded color for now.
                 this->label->setTextColor(nvgRGB(255, 255, 255));
             } else {
                 this->label->setTextColor(nvgRGB(204, 204, 204));
@@ -62,11 +72,16 @@ public:
                     brls::Image* img = new brls::Image();
                     img->setImageFromFile(path);
                     img->setDimensions(160, 240);
-                    // Content mode removed/simplified as it might be missing
-                    img->setScalingType(brls::ImageScalingType::FIT); 
+                    // Use CROP as FILL substitute
+                    img->setScalingType(brls::ImageScalingType::CROP); 
                     img->setCornerRadius(8);
                     
-                    this->imageBox->clearViews();
+                    // Manual clear
+                    auto children = this->imageBox->getChildren();
+                    for (auto child : children) {
+                        this->imageBox->removeView(child);
+                    }
+                    
                     this->imageBox->addView(img);
                 }
             });

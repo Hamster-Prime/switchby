@@ -1,5 +1,6 @@
 #pragma once
 #include <borealis.hpp>
+#include <chrono> // Added missing header
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 
@@ -11,7 +12,7 @@ public:
 
     brls::View* createContentView() override;
     void onContentAvailable() override;
-    void draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style, brls::FrameContext* ctx) override;
+    // Removed draw override from here, it's now in MpvView
 
 private:
     std::string url;
@@ -56,4 +57,6 @@ private:
     std::string formatTime(double seconds);
     
     void cycleTrack(const std::string& type);
+    
+    brls::View* mpvView = nullptr;
 };

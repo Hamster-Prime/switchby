@@ -9,6 +9,51 @@
 #include <GLFW/glfw3.h>
 #endif
 
+// Custom view to handle MPV rendering
+class MpvView : public brls::Box {
+public:
+    MpvView() : brls::Box(brls::Axis::COLUMN) {
+        this->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
+        this->setBackgroundColor(nvgRGB(0, 0, 0));
+    }
+
+    void setMpvContext(mpv_render_context* ctx) {
+        this->mpv_gl = ctx;
+    }
+
+    void draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style, brls::FrameContext* ctx) override {
+        // Draw video first (under UI)
+        if (this->mpv_gl) {
+            // We need to handle GL context here
+            // In Borealis, draw is called within a frame. 
+            // MPV rendering might need to be carefully placed.
+            // For now, simple FBO rendering.
+            
+            GLint fbo = 0;
+            glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fbo);
+
+            int w = (int)width;
+            int h = (int)height;
+
+            mpv_opengl_fbo mpv_fbo{fbo, w, h, 0};
+            int flip = 1;
+            mpv_render_param params[]{
+                {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+                {MPV_RENDER_PARAM_FLIP_Y, &flip},
+                {MPV_RENDER_PARAM_INVALID, nullptr}
+            };
+            
+            mpv_render_context_render(this->mpv_gl, params);
+        }
+
+        // Draw children (UI overlays)
+        brls::Box::draw(vg, x, y, width, height, style, ctx);
+    }
+
+private:
+    mpv_render_context* mpv_gl = nullptr;
+};
+
 static void* get_proc_address(void* ctx, const char* name) {
 #ifdef __SWITCH__
     return nullptr;
@@ -36,9 +81,9 @@ PlayerActivity::~PlayerActivity() {
 }
 
 brls::View* PlayerActivity::createContentView() {
-    brls::Box* root = new brls::Box();
-    root->setDimensions(brls::Application::contentWidth, brls::Application::contentHeight);
-    root->setBackgroundColor(nvgRGB(0, 0, 0));
+    // Use our custom view as root
+    MpvView* root = new MpvView();
+    this->mpvView = root; // Store reference to pass context later
 
     // OSD Container (overlay)
     this->osdContainer = new brls::Box();
@@ -124,6 +169,11 @@ brls::View* PlayerActivity::createContentView() {
 void PlayerActivity::onContentAvailable() {
     this->initMpv();
     
+    // Pass the created context to the view for drawing
+    if (this->mpvView) {
+        ((MpvView*)this->mpvView)->setMpvContext(this->mpv_gl);
+    }
+
     // Register controls
     this->registerAction("Play/Pause", brls::ControllerButton::BUTTON_A, [this](brls::View* view) {
         this->togglePause();
@@ -206,36 +256,6 @@ void PlayerActivity::initMpv() {
     EmbyClient::instance().reportPlaybackStart(this->itemId);
     this->hasStartedPlayback = true;
     this->lastReportTime = std::chrono::steady_clock::now();
-}
-
-void PlayerActivity::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style, brls::FrameContext* ctx) {
-    if (!this->mpv_gl) {
-        brls::Activity::draw(vg, x, y, width, height, style, ctx);
-        return;
-    }
-
-    // Render video
-    GLint fbo = 0;
-    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &fbo);
-
-    int w = (int)width;
-    int h = (int)height;
-
-    mpv_opengl_fbo mpv_fbo{fbo, w, h, 0};
-    int flip = 1;
-    mpv_render_param params[]{
-        {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
-        {MPV_RENDER_PARAM_FLIP_Y, &flip},
-        {MPV_RENDER_PARAM_INVALID, nullptr}
-    };
-    
-    mpv_render_context_render(this->mpv_gl, params);
-
-    // Update playback state
-    this->updateOsd();
-
-    // Draw OSD overlay
-    brls::Activity::draw(vg, x, y, width, height, style, ctx);
 }
 
 void PlayerActivity::updateOsd() {
