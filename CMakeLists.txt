@@ -31,7 +31,9 @@ target_include_directories(switchby PRIVATE src)
 
 # Link
 find_package(CURL REQUIRED)
-target_link_libraries(switchby borealis::borealis nlohmann_json::nlohmann_json CURL::libcurl)
+find_package(mpv REQUIRED)
+
+target_link_libraries(switchby borealis::borealis nlohmann_json::nlohmann_json CURL::libcurl mpv)
 
 # Resources
 add_custom_command(TARGET switchby POST_BUILD

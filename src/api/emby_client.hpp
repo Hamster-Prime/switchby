@@ -50,6 +50,9 @@ public:
     // Get specific item details
     void getItem(const std::string& itemId, std::function<void(bool success, const EmbyItem& item)> cb);
 
+    // Get Playback Info (URL)
+    std::string getPlaybackUrl(const std::string& itemId);
+
     // Download image to memory (or file)
     // type defaults to "Primary", index defaults to 0
     void downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb, const std::string& type = "Primary");

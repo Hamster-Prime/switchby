@@ -303,3 +303,9 @@ void EmbyClient::getItem(const std::string& itemId, std::function<void(bool succ
         }
     });
 }
+std::string EmbyClient::getPlaybackUrl(const std::string& itemId) {
+    // Basic direct stream URL
+    // In reality, we should check PlaybackInfo first to decide transcode vs direct
+    // But for MVP mpv usually handles direct streams well
+    return this->baseUrl + "/Videos/" + itemId + "/stream?static=true&MediaSourceId=" + itemId + "&PlaySessionId=switchby-" + itemId + "&api_key=" + this->accessToken;
+}

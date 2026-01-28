@@ -1,5 +1,6 @@
 #include "activity/detail_activity.hpp"
 #include "activity/library_activity.hpp"
+#include "activity/player_activity.hpp"
 #include "api/emby_client.hpp"
 
 DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {
@@ -95,8 +96,10 @@ void DetailActivity::onContentAvailable() {
                 });
             } else {
                 this->btnPlay->setLabel("Play");
-                this->btnPlay->registerClickAction([this](brls::View* view) {
-                    brls::Application::notify("Starting Playback...");
+                this->btnPlay->registerClickAction([this, item](brls::View* view) {
+                    std::string playUrl = EmbyClient::instance().getPlaybackUrl(item.id);
+                    brls::Logger::info("Playing URL: {}", playUrl);
+                    brls::Application::pushActivity(new PlayerActivity(playUrl));
                     return true;
                 });
             }
