@@ -37,10 +37,23 @@ private:
     std::chrono::steady_clock::time_point lastReportTime;
     bool hasStartedPlayback = false;
     
+    // Tracks
+    struct Track {
+        int id;
+        std::string type;
+        std::string title;
+        std::string lang;
+        bool selected;
+    };
+    std::vector<Track> audioTracks;
+    std::vector<Track> subTracks;
+    
     void initMpv();
     void updateOsd();
     void togglePause();
     void seek(double seconds);
     void reportProgress();
     std::string formatTime(double seconds);
+    
+    void cycleTrack(const std::string& type);
 };
