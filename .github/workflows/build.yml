@@ -34,8 +34,26 @@ jobs:
             switch-glad \
             switch-glm \
             switch-mesa
-          # Lua required by switch-libmpv; try switch-lua54 (name may vary)
-          sudo dkp-pacman -S --noconfirm --needed switch-lua54 || true
+          # Lua not in devkitPro; build from source (required by switch-libmpv)
+          sudo dkp-pacman -S --noconfirm --needed wget || true
+
+      - name: Build Lua 5.4 for Switch
+        run: |
+          . $DEVKITPRO/switchvars.sh
+          cd /tmp
+          wget -q https://www.lua.org/ftp/lua-5.4.6.tar.gz -O lua-5.4.6.tar.gz
+          tar xf lua-5.4.6.tar.gz
+          cd lua-5.4.6
+          make generic \
+            CC="$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc" \
+            AR="$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc-ar rcu" \
+            RANLIB="$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc-ranlib" \
+            CFLAGS="-O2 -fPIC" \
+            liblua.a || true
+          mkdir -p $GITHUB_WORKSPACE/lua_install/lib $GITHUB_WORKSPACE/lua_install/include
+          cp src/liblua.a $GITHUB_WORKSPACE/lua_install/lib/
+          cp src/lua.h src/luaconf.h src/lualib.h src/lauxlib.h $GITHUB_WORKSPACE/lua_install/include/
+          (cp src/lua.hpp $GITHUB_WORKSPACE/lua_install/include/ 2>/dev/null) || true
 
       - name: Clone dependencies locally
         run: |
@@ -60,7 +78,8 @@ jobs:
             -DFETCHCONTENT_SOURCE_DIR_BOREALIS=$(pwd)/../deps/borealis \
             -DFETCHCONTENT_SOURCE_DIR_JSON=$(pwd)/../deps/json \
             -DFETCHCONTENT_SOURCE_DIR_LIBRETRO-COMMON=$(pwd)/../deps/libretro-common \
-            -DFETCHCONTENT_SOURCE_DIR_NANOVG=$(pwd)/../deps/nanovg
+            -DFETCHCONTENT_SOURCE_DIR_NANOVG=$(pwd)/../deps/nanovg \
+            -DLUA_ROOT=$GITHUB_WORKSPACE/lua_install
 
       - name: Build project
         run: |

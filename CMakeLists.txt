@@ -85,16 +85,23 @@ target_link_libraries(switchby PRIVATE
 
 # --- Platform Specific Configuration ---
 if ("${PLATFORM}" STREQUAL "SWITCH")
-    # Switch build; libmpv may need Lua (switch-lua54 if available)
-    find_package(PkgConfig REQUIRED)
+    # Switch build; libmpv needs Lua (from LUA_ROOT in CI, or pkg-config)
     set(LUA_LINK_LIBS "")
-    foreach(LUA_PC lua54 lua5.4 lua)
-        pkg_check_modules(LUA ${LUA_PC} QUIET)
-        if(LUA_FOUND)
-            list(APPEND LUA_LINK_LIBS ${LUA_LIBRARIES})
-            break()
-        endif()
-    endforeach()
+    if(LUA_ROOT)
+        target_include_directories(switchby PRIVATE ${LUA_ROOT}/include)
+        target_link_directories(switchby PRIVATE ${LUA_ROOT}/lib)
+        list(APPEND LUA_LINK_LIBS lua)
+    else()
+        find_package(PkgConfig REQUIRED)
+        foreach(LUA_PC lua54 lua5.4 lua)
+            pkg_check_modules(LUA ${LUA_PC} QUIET)
+            if(LUA_FOUND)
+                target_include_directories(switchby PRIVATE ${LUA_INCLUDE_DIRS})
+                list(APPEND LUA_LINK_LIBS ${LUA_LIBRARIES})
+                break()
+            endif()
+        endforeach()
+    endif()
     target_link_libraries(switchby PRIVATE 
         mpv
         avfilter
