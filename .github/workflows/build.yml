@@ -19,12 +19,11 @@ jobs:
 
       - name: Install Switch development libraries
         run: |
-          sudo dkp-pacman -S --noconfirm \
-            switch-dev \
+          sudo dkp-pacman -S --noconfirm --needed \
+            libnx switch-tools devkita64-cmake switch-cmake switch-pkg-config \
             switch-curl \
             switch-libmpv \
             switch-ffmpeg \
-            switch-lua \
             switch-mbedtls \
             switch-libjpeg-turbo \
             switch-freetype \
@@ -35,6 +34,8 @@ jobs:
             switch-glad \
             switch-glm \
             switch-mesa
+          # Lua required by switch-libmpv; try switch-lua54 (name may vary)
+          sudo dkp-pacman -S --noconfirm --needed switch-lua54 || true
 
       - name: Clone dependencies locally
         run: |

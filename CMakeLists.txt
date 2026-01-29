@@ -85,7 +85,16 @@ target_link_libraries(switchby PRIVATE
 
 # --- Platform Specific Configuration ---
 if ("${PLATFORM}" STREQUAL "SWITCH")
-    # Switch build
+    # Switch build; libmpv may need Lua (switch-lua54 if available)
+    find_package(PkgConfig REQUIRED)
+    set(LUA_LINK_LIBS "")
+    foreach(LUA_PC lua54 lua5.4 lua)
+        pkg_check_modules(LUA ${LUA_PC} QUIET)
+        if(LUA_FOUND)
+            list(APPEND LUA_LINK_LIBS ${LUA_LIBRARIES})
+            break()
+        endif()
+    endforeach()
     target_link_libraries(switchby PRIVATE 
         mpv
         avfilter
@@ -120,7 +129,7 @@ if ("${PLATFORM}" STREQUAL "SWITCH")
         glapi
         drm_nouveau
         nx
-        lua
+        ${LUA_LINK_LIBS}
     )
 
     nx_create_nro(switchby
