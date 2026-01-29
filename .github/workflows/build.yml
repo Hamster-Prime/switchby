@@ -2,9 +2,9 @@ name: Build Switch NRO
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
   workflow_dispatch:
 
 jobs:
@@ -17,46 +17,48 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Switch libraries
+      - name: Install Switch development libraries
         run: |
-          sudo dkp-pacman -S --needed --noconfirm \
+          sudo dkp-pacman -S --noconfirm \
             switch-dev \
-            switch-portlibs \
             switch-curl \
+            switch-libmpv \
+            switch-ffmpeg \
             switch-mbedtls \
-            switch-zlib \
-            switch-bzip2 \
-            switch-freetype \
-            switch-libpng \
             switch-libjpeg-turbo \
+            switch-freetype \
             switch-sdl2 \
-            switch-sdl2_image \
-            switch-sdl2_ttf \
-            switch-mesa \
+            switch-zlib \
+            switch-libpng \
+            switch-bzip2 \
             switch-glad \
-            switch-glfw \
-            switch-libdrm_nouveau \
-            dkp-cmake-common-utils
+            switch-glm \
+            switch-mesa
 
-      - name: Install mpv for Switch
+      - name: Clone dependencies locally
         run: |
-          # Clone and build switch-mpv if not available via pacman
-          git clone --depth 1 https://github.com/xfangfang/wiliwili.git /tmp/wiliwili || true
-          # Use prebuilt libs from wiliwili if available
-          echo "MPV will be handled by the build system"
+          mkdir -p deps
+          git clone --recursive -b wiliwili https://github.com/xfangfang/borealis.git deps/borealis
+          git clone https://github.com/nlohmann/json.git deps/json
+          git clone https://github.com/libretro/libretro-common.git deps/libretro-common
+          git clone https://github.com/memononen/nanovg.git deps/nanovg
 
       - name: Configure CMake
         run: |
           . $DEVKITPRO/switchvars.sh
-          cmake -B build -G "Unix Makefiles" \
-                -DPLATFORM=SWITCH \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_TOOLCHAIN_FILE=${DEVKITPRO}/cmake/Switch.cmake
+          mkdir -p build && cd build
+          cmake .. \
+            -DPLATFORM=SWITCH \
+            -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+            -DFETCHCONTENT_SOURCE_DIR_BOREALIS=$(pwd)/../deps/borealis \
+            -DFETCHCONTENT_SOURCE_DIR_JSON=$(pwd)/../deps/json \
+            -DFETCHCONTENT_SOURCE_DIR_LIBRETRO-COMMON=$(pwd)/../deps/libretro-common \
+            -DFETCHCONTENT_SOURCE_DIR_NANOVG=$(pwd)/../deps/nanovg
 
       - name: Build project
         run: |
           . $DEVKITPRO/switchvars.sh
-          cmake --build build -j$(nproc)
+          make -C build -j$(nproc)
 
       - name: Prepare artifact
         run: |
