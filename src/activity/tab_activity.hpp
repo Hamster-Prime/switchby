@@ -10,20 +10,20 @@ public:
     TabActivity()
     {
         brls::TabFrame* tabFrame = new brls::TabFrame();
-        tabFrame->setTitle("SwitchBy");
+        // tabFrame->setTitle("SwitchBy"); // Not supported in wiliwili branch
         
         // Tab 1: Home
         // addTab expects a TabViewCreator (lambda returning View*)
-        tabFrame->addTab("🏠 Home", []() { return new HomeTab(); });
+        tabFrame->addTab("🏠 Home", []() -> brls::View* { return new HomeTab(); });
         
         // Tab 2: Search
-        tabFrame->addTab("🔍 Search", []() { return new SearchActivity(); });
+        tabFrame->addTab("🔍 Search", []() -> brls::View* { return new SearchTab(); });
 
         // Separator
         tabFrame->addSeparator();
 
         // Tab 3: Settings
-        tabFrame->addTab("⚙️ Settings", []() { return new SettingsTab(); });
+        tabFrame->addTab("⚙️ Settings", []() -> brls::View* { return new SettingsTab(); });
 
         this->setContentView(tabFrame);
     }

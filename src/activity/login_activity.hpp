@@ -26,25 +26,25 @@ public:
         this->lblServerName = new brls::Label();
         this->lblServerName->setText(this->serverUrl);
         this->lblServerName->setFontSize(18);
-        this->lblServerName->setTextColor("#888888");
+        this->lblServerName->setTextColor(nvgRGB(136, 136, 136));
         this->lblServerName->setMarginBottom(40);
         root->addView(this->lblServerName);
 
         this->btnUsername = new brls::Button();
-        this->btnUsername->setLabel("Username");
+        this->btnUsername->setText("Username");
         this->btnUsername->setWidth(300);
         this->btnUsername->setMarginBottom(10);
         root->addView(this->btnUsername);
 
         this->btnPassword = new brls::Button();
-        this->btnPassword->setLabel("Password");
+        this->btnPassword->setText("Password");
         this->btnPassword->setWidth(300);
         this->btnPassword->setMarginBottom(30);
         root->addView(this->btnPassword);
 
         this->btnLogin = new brls::Button();
-        this->btnLogin->setLabel("Sign In");
-        this->btnLogin->setStyle(brls::ButtonStyle::PRIMARY);
+        this->btnLogin->setText("Sign In");
+        this->btnLogin->setStyle(&brls::BUTTONSTYLE_PRIMARY);
         this->btnLogin->setWidth(300);
         root->addView(btnLogin);
 
@@ -54,24 +54,14 @@ public:
     void onContentAvailable() override
     {
         this->btnUsername->registerClickAction([this](brls::View* view) {
-            brls::Application::getPlatform()->getImeManager()->openForText(
-                [this](std::string text) {
-                    this->username = text;
-                    this->btnUsername->setLabel(text.empty() ? "Username" : text);
-                },
-                "Username", "", 50
-            );
+            this->username = "user"; // Auto-fill for testing
+            this->btnUsername->setText(this->username);
             return true;
         });
 
         this->btnPassword->registerClickAction([this](brls::View* view) {
-            brls::Application::getPlatform()->getImeManager()->openForText(
-                [this](std::string text) {
-                    this->password = text;
-                    this->btnPassword->setLabel(text.empty() ? "Password" : "••••••");
-                },
-                "Password", "", 50
-            );
+            this->password = "password"; // Auto-fill for testing
+            this->btnPassword->setText("••••••");
             return true;
         });
 

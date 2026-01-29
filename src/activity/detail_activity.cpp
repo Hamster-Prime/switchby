@@ -2,6 +2,7 @@
 #include "activity/library_activity.hpp"
 #include "activity/player_activity.hpp"
 #include "api/emby_client.hpp"
+#include "utils/thread_pool.hpp"
 
 DetailActivity::DetailActivity(std::string itemId) : itemId(itemId) {}
 
@@ -13,7 +14,7 @@ brls::View* DetailActivity::createContentView() {
     // Backdrop image (full width, cropped)
     this->backdropImage = new brls::Image();
     this->backdropImage->setDimensions(brls::Application::contentWidth, 350);
-    this->backdropImage->setScalingType(brls::ImageScalingType::CROP);
+    this->backdropImage->setScalingType(brls::ImageScalingType::FILL);
     this->backdropImage->setVisibility(brls::Visibility::GONE);
     root->addView(this->backdropImage);
 
@@ -41,7 +42,7 @@ brls::View* DetailActivity::createContentView() {
     
     this->posterImage = new brls::Image();
     this->posterImage->setDimensions(280, 420);
-    this->posterImage->setScalingType(brls::ImageScalingType::CROP);
+    this->posterImage->setScalingType(brls::ImageScalingType::FILL);
     this->posterImage->setCornerRadius(12);
     this->posterBox->addView(this->posterImage);
     

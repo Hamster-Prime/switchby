@@ -26,7 +26,7 @@ public:
         brls::Label* subtitle = new brls::Label();
         subtitle->setText("Emby Client for Switch");
         subtitle->setFontSize(20);
-        subtitle->setTextColor("#888888");
+        subtitle->setTextColor(nvgRGB(136, 136, 136));
         subtitle->setMarginBottom(40);
         root->addView(subtitle);
 
@@ -39,8 +39,8 @@ public:
 
         // Add new server button
         brls::Button* btnAdd = new brls::Button();
-        btnAdd->setLabel("+ Add New Server");
-        btnAdd->setStyle(brls::ButtonStyle::BORDERED);
+        btnAdd->setText("+ Add New Server");
+        btnAdd->setStyle(&brls::BUTTONSTYLE_BORDERED);
         btnAdd->setWidth(350);
         btnAdd->registerClickAction([this](brls::View* view) {
             this->promptNewServer();
@@ -79,14 +79,17 @@ private:
     brls::Box* serversBox;
 
     void refreshServerList() {
-        this->serversBox->clearViews();
+        std::vector<brls::View*> children = this->serversBox->getChildren();
+        for (auto child : children) {
+            this->serversBox->removeView(child);
+        }
         
         auto& servers = Config::instance().getServers();
         
         if (servers.empty()) {
             brls::Label* noServers = new brls::Label();
             noServers->setText("No saved servers");
-            noServers->setTextColor("#666666");
+            noServers->setTextColor(nvgRGB(102, 102, 102));
             noServers->setMarginBottom(20);
             this->serversBox->addView(noServers);
             return;
@@ -105,7 +108,7 @@ private:
             if (!server.username.empty()) {
                 label += " (" + server.username + ")";
             }
-            btn->setLabel(label);
+            btn->setText(label);
             btn->setWidth(300);
             btn->registerClickAction([this, i](brls::View* view) {
                 this->connectToServer(i);
@@ -115,8 +118,8 @@ private:
 
             // Delete button
             brls::Button* btnDel = new brls::Button();
-            btnDel->setLabel("✕");
-            btnDel->setStyle(brls::ButtonStyle::BORDERLESS);
+            btnDel->setText("✕");
+            btnDel->setStyle(&brls::BUTTONSTYLE_BORDERLESS);
             btnDel->setWidth(50);
             btnDel->registerClickAction([this, i](brls::View* view) {
                 Config::instance().removeServer(i);
@@ -130,24 +133,18 @@ private:
     }
 
     void promptNewServer() {
-        brls::Application::getPlatform()->getImeManager()->openForText(
-            [this](std::string text) {
-                if (text.empty()) return;
-                
-                brls::Application::notify("Connecting...");
-                
-                EmbyClient::instance().connect(text, [this, text](bool success, const std::string& error) {
-                    if (success) {
-                        brls::Application::pushActivity(new LoginActivity(text, true), brls::TransitionAnimation::SLIDE_LEFT);
-                    } else {
-                        brls::Application::notify("Error: " + error);
-                    }
-                });
-            },
-            "Enter Emby Server URL",
-            "http://",
-            100
-        );
+        // Auto-fill localhost for testing since we lack IME on desktop
+        std::string text = "http://localhost:8096";
+        
+        brls::Application::notify("Connecting to " + text + "...");
+        
+        EmbyClient::instance().connect(text, [this, text](bool success, const std::string& error) {
+            if (success) {
+                brls::Application::pushActivity(new LoginActivity(text, true), brls::TransitionAnimation::SLIDE_LEFT);
+            } else {
+                brls::Application::notify("Error: " + error);
+            }
+        });
     }
 
     void connectToServer(size_t index) {

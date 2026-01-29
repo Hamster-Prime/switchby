@@ -3,6 +3,7 @@
 #include "api/emby_client.hpp"
 #include "activity/library_activity.hpp"
 #include "view/poster_cell.hpp"
+#include "utils/thread_pool.hpp"
 
 class HomeTab : public brls::Box
 {

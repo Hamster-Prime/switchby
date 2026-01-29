@@ -11,16 +11,20 @@ if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Setting build type to 'Release' as default.")
 endif()
 
+if ("${PLATFORM}" STREQUAL "SWITCH")
+    set(PLATFORM_SWITCH ON CACHE BOOL "" FORCE)
+else()
+    set(PLATFORM_DESKTOP ON CACHE BOOL "" FORCE)
+endif()
+
 # --- Dependencies ---
-# Using FetchContent to ensure reproducible builds by locking dependency versions.
-# This replaces the old git submodules.
 include(FetchContent)
 
 # Declare all dependencies first
 FetchContent_Declare(
     borealis
-    GIT_REPOSITORY https://github.com/natinusala/borealis.git
-    GIT_TAG main # For stability, it's best to lock this to a specific commit hash or release tag
+    GIT_REPOSITORY https://github.com/xfangfang/borealis.git
+    GIT_TAG wiliwili
 )
 FetchContent_Declare(
     json
@@ -30,12 +34,12 @@ FetchContent_Declare(
 FetchContent_Declare(
     libretro-common
     GIT_REPOSITORY https://github.com/libretro/libretro-common.git
-    GIT_TAG master # Using master as no tags are available
+    GIT_TAG master
 )
 FetchContent_Declare(
     nanovg
     GIT_REPOSITORY https://github.com/memononen/nanovg.git
-    GIT_TAG master # Best to lock to a specific commit hash
+    GIT_TAG master
 )
 
 # Make all dependencies available for use
@@ -55,7 +59,7 @@ set(SOURCES
 add_executable(switchby ${SOURCES})
 
 # --- Definitions & Includes ---
-add_definitions("-DBOREALIS_RESOURCES='${CMAKE_CURRENT_SOURCE_DIR}/resources'")
+add_definitions("-DBRLS_RESOURCES='${CMAKE_CURRENT_SOURCE_DIR}/resources'")
 
 target_include_directories(switchby PRIVATE
     src
@@ -75,21 +79,51 @@ target_compile_options(switchby PRIVATE
 find_package(CURL REQUIRED)
 target_link_libraries(switchby PRIVATE
     borealis
-    nanovg
-    nlohmann_json::nlohmann_json
+    nlohmann_json
     CURL::libcurl
 )
 
 # --- Platform Specific Configuration ---
-if (${PLATFORM} STREQUAL "SWITCH")
+if ("${PLATFORM}" STREQUAL "SWITCH")
     # Switch build
-    target_link_libraries(switchby PRIVATE mpv) # Use PRIVATE for better encapsulation
+    target_link_libraries(switchby PRIVATE 
+        mpv
+        avfilter
+        avformat
+        avcodec
+        postproc
+        swresample
+        swscale
+        avutil
+        ass
+        placebo
+        archive
+        curl
+        dav1d
+        mbedtls
+        mbedx509
+        mbedcrypto
+        freetype
+        harfbuzz
+        fribidi
+        expat
+        bz2
+        lzma
+        zstd
+        lz4
+        png
+        jpeg
+        z
+        SDL2
+        EGL
+        GLESv2
+        glapi
+        drm_nouveau
+        nx
+    )
 
-    include(${DEVKITPRO}/libnx/switch_rules)
-    build_switch_bin(switchby
-        TITLE "SwitchBy"
-        AUTHOR "Hamster-Prime"
-        VERSION "0.1.0"
+    nx_create_nro(switchby
+        ROMFS "${CMAKE_CURRENT_SOURCE_DIR}/resources"
     )
 else()
     # Desktop build

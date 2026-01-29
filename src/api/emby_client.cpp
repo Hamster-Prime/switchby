@@ -156,7 +156,7 @@ void EmbyClient::get(const std::string& endpoint, std::function<void(bool succes
             curl_easy_cleanup(curl);
             if (headers) curl_slist_free_all(headers);
 
-            brls::sync([res, readBuffer, http_code, cb]() {
+            brls::sync([res, readBuffer, http_code, cb, endpoint]() {
                 if (res == CURLE_OK && http_code == 200) {
                     try {
                         cb(true, json::parse(readBuffer));
@@ -167,11 +167,12 @@ void EmbyClient::get(const std::string& endpoint, std::function<void(bool succes
                     brls::Logger::error("GET {} failed: {}", endpoint, http_code);
                     cb(false, nullptr);
                 }
-            });
-        }
-    }).detach();
-}
-void EmbyClient::getItems(const std::string& parentId, std::function<void(bool success, const std::vector<EmbyItem>& items)> cb) {
+                        });
+                    }
+                });
+            }
+            
+            void EmbyClient::getItems(const std::string& parentId, std::function<void(bool success, const std::vector<EmbyItem>& items)> cb) {
     // Basic query for items: recursive=true, fields=ImageTags
     std::string endpoint = "/Users/" + this->userId + "/Items?ParentId=" + parentId + "&Recursive=true&Fields=ImageTags,PrimaryImageAspectRatio&SortBy=SortName&SortOrder=Ascending";
     
@@ -267,7 +268,7 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
                 }
             });
         }
-    }).detach();
+    });
 }
 void EmbyClient::getItem(const std::string& itemId, std::function<void(bool success, const EmbyItem& item)> cb) {
     std::string endpoint = "/Users/" + this->userId + "/Items/" + itemId;
@@ -432,7 +433,7 @@ void EmbyClient::post(const std::string& endpoint, const json& body, std::functi
             curl_easy_cleanup(curl);
             curl_slist_free_all(headers);
 
-            brls::sync([res, readBuffer, http_code, cb]() {
+            brls::sync([res, readBuffer, http_code, cb, endpoint]() {
                 if (res == CURLE_OK && (http_code == 200 || http_code == 204)) {
                     try {
                         if (!readBuffer.empty())
@@ -448,7 +449,7 @@ void EmbyClient::post(const std::string& endpoint, const json& body, std::functi
                 }
             });
         }
-    }).detach();
+    });
 }
 
 void EmbyClient::reportPlaybackStart(const std::string& itemId) {

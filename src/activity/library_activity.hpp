@@ -30,13 +30,13 @@ public:
 
         this->statusLabel = new brls::Label();
         this->statusLabel->setText("Loading items...");
-        this->statusLabel->setTextColor("#888888");
+        this->statusLabel->setTextColor(nvgRGB(136, 136, 136));
         container->addView(this->statusLabel);
 
         // Grid for items
         this->grid = new brls::Box();
         this->grid->setAxis(brls::Axis::ROW);
-        this->grid->setWrap(true);
+        // this->grid->setWrap(true);
         this->grid->setJustifyContent(brls::JustifyContent::FLEX_START);
         container->addView(this->grid);
 

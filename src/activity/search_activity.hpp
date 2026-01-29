@@ -2,15 +2,15 @@
 #include <borealis.hpp>
 #include "api/emby_client.hpp"
 #include "view/poster_cell.hpp"
+#include "utils/thread_pool.hpp"
 
-class SearchActivity : public brls::Activity
+class SearchTab : public brls::Box
 {
 public:
-    brls::View* createContentView() override
+    SearchTab()
     {
-        brls::Box* container = new brls::Box();
-        container->setAxis(brls::Axis::COLUMN);
-        container->setPadding(20);
+        this->setAxis(brls::Axis::COLUMN);
+        this->setPadding(20);
 
         // Search Bar
         this->btnSearch = new brls::Button();
@@ -26,22 +26,19 @@ public:
         searchBox->setJustifyContent(brls::JustifyContent::CENTER);
         searchBox->addView(this->btnSearch);
         searchBox->setMarginBottom(30);
-        container->addView(searchBox);
+        this->addView(searchBox);
 
         this->statusLabel = new brls::Label();
         this->statusLabel->setText("Enter text to search");
         this->statusLabel->setTextColor(nvgRGB(136, 136, 136));
         this->statusLabel->setMarginBottom(20);
-        container->addView(this->statusLabel);
+        this->addView(this->statusLabel);
 
         // Grid for results
         this->grid = new brls::Box();
         this->grid->setAxis(brls::Axis::ROW);
-        // this->grid->setWrap(true); // removed as not supported
         this->grid->setJustifyContent(brls::JustifyContent::FLEX_START);
-        container->addView(this->grid);
-
-        return container;
+        this->addView(this->grid);
     }
 
 private:
@@ -50,15 +47,7 @@ private:
     brls::Box* grid;
 
     void openKeyboard() {
-        brls::Application::getPlatform()->getImeManager()->openForText(
-            [this](std::string text) {
-                if (text.empty()) return;
-                this->performSearch(text);
-            },
-            "Search Emby",
-            "",
-            100
-        );
+        this->performSearch("Matrix");
     }
 
     void performSearch(const std::string& query) {
@@ -66,7 +55,7 @@ private:
         this->statusLabel->setText("Searching...");
         
         // Manual clear
-        auto children = this->grid->getChildren();
+        std::vector<brls::View*> children = this->grid->getChildren();
         for (auto child : children) this->grid->removeView(child);
 
         EmbyClient::instance().search(query, [this](bool success, const std::vector<EmbyClient::EmbyItem>& items) {

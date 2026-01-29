@@ -6,6 +6,7 @@
 #ifdef __SWITCH__
 // Switch specific includes
 #include <EGL/egl.h>
+#include <glad/glad.h>
 #else
 #include <GLFW/glfw3.h>
 #endif

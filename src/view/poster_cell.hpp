@@ -11,13 +11,6 @@ public:
         this->setDimensions(160, 280);
         this->setAxis(brls::Axis::COLUMN);
         this->setAlignItems(brls::AlignItems::CENTER);
-        this->setMargin(8, 8, 8, 8); // Box uses setMargin(top, right, bottom, left) overload in older borealis? Or need to check.
-        // Actually header said setPadding. Box usually doesn't have setMargin? 
-        // View has setMargin. 
-        // Let's assume View::setMargin(top, right, bottom, left) exists or just setMargin(all).
-        // Wait, the error said `setMargin(8)` -> `setMargins`? No, View has setMargin(float). 
-        // Error: "class PosterCell has no member named setMargin; did you mean setMargins?"
-        // So it is setMargins.
         this->setMargins(8, 8, 8, 8); 
         this->setFocusable(true);
 
@@ -72,8 +65,8 @@ public:
                     brls::Image* img = new brls::Image();
                     img->setImageFromFile(path);
                     img->setDimensions(160, 240);
-                    // Use CROP as FILL substitute
-                    img->setScalingType(brls::ImageScalingType::CROP); 
+                    // Use FILL as substitute for CROP
+                    img->setScalingType(brls::ImageScalingType::FILL); 
                     img->setCornerRadius(8);
                     
                     // Manual clear
