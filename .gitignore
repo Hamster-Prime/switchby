@@ -1,0 +1,35 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.suo
+*.user
+*.sln
+*.vcxproj*
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.nro
+*.nacp
+*.elf
+
+# Dependencies (fetched by CMake)
+_deps/
+
+# Cache
+cache/
+*.jpg
+*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

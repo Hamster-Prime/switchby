@@ -7,16 +7,17 @@
 class PlayerActivity : public brls::Activity
 {
 public:
-    PlayerActivity(std::string url, std::string itemId);
+    PlayerActivity(std::string url, std::string itemId, long long resumePositionTicks = 0);
     ~PlayerActivity();
 
     brls::View* createContentView() override;
     void onContentAvailable() override;
-    // Removed draw override from here, it's now in MpvView
 
 private:
     std::string url;
     std::string itemId;
+    long long resumePositionTicks = 0;  // Resume position in ticks (10,000,000 ticks = 1 second)
+    bool hasSeekToResume = false;
     mpv_handle* mpv = nullptr;
     mpv_render_context* mpv_gl = nullptr;
     

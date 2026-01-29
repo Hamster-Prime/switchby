@@ -46,8 +46,9 @@ FetchContent_MakeAvailable(borealis json libretro-common nanovg)
 # Please add all your .cpp files here.
 set(SOURCES
     src/main.cpp
-    # src/activity/server_select_activity.cpp
-    # ... add other source files
+    src/api/emby_client.cpp
+    src/activity/detail_activity.cpp
+    src/activity/player_activity.cpp
 )
 
 # --- Executable ---

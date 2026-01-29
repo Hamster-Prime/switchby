@@ -50,7 +50,7 @@ private:
     brls::Box* grid;
 
     void openKeyboard() {
-        brls::Application::getPlatform()->getInputManager()->openForText(
+        brls::Application::getPlatform()->getImeManager()->openForText(
             [this](std::string text) {
                 if (text.empty()) return;
                 this->performSearch(text);

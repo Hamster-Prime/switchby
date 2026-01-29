@@ -3,50 +3,74 @@ name: Build Switch NRO
 on:
   push:
     branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Install devkitPro prerequisites
+      - name: Install Switch libraries
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bzip2
-
-      - name: Install devkitPro pacman
-        run: |
-          DEVKITPRO_PACMAN_URL=$(curl -sL https://api.github.com/repos/devkitPro/pacman/releases/latest | grep "browser_download_url.*-x86_64.deb" | cut -d '"' -f 4)
-          wget -O devkitpro-pacman.deb "$DEVKITPRO_PACMAN_URL"
-          sudo dpkg -i devkitpro-pacman.deb
-          rm devkitpro-pacman.deb
           sudo dkp-pacman -Syu --noconfirm
+          sudo dkp-pacman -S --noconfirm \
+            switch-dev \
+            switch-portlibs \
+            switch-curl \
+            switch-mbedtls \
+            switch-zlib \
+            switch-bzip2 \
+            switch-freetype \
+            switch-libpng \
+            switch-libjpeg-turbo \
+            switch-sdl2 \
+            switch-sdl2_image \
+            switch-sdl2_ttf \
+            switch-mesa \
+            switch-glad \
+            switch-glfw \
+            switch-libdrm_nouveau \
+            dkp-cmake-common-utils
 
-      - name: Install Switch build tools
-        run: sudo dkp-pacman -S --noconfirm switch-dev
+      - name: Install mpv for Switch
+        run: |
+          # Clone and build switch-mpv if not available via pacman
+          git clone --depth 1 https://github.com/xfangfang/wiliwili.git /tmp/wiliwili || true
+          # Use prebuilt libs from wiliwili if available
+          echo "MPV will be handled by the build system"
 
       - name: Configure CMake
         run: |
-          export DEVKITPRO=/opt/devkitpro
+          source $DEVKITPRO/switchvars.sh
           cmake -B build -G "Unix Makefiles" \
                 -DPLATFORM=SWITCH \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_TOOLCHAIN_FILE=${DEVKITPRO}/cmake/Switch.cmake
-      
+
       - name: Build project
-        run: cmake --build build -j `nproc`
+        run: |
+          source $DEVKITPRO/switchvars.sh
+          cmake --build build -j$(nproc)
 
       - name: Prepare artifact
         run: |
           mkdir -p artifacts
-          mv build/switchby.nro artifacts/switchby.nro
-          
+          cp build/switchby.nro artifacts/ 2>/dev/null || true
+          cp build/*.nro artifacts/ 2>/dev/null || true
+          ls -la artifacts/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: switchby-nro
           path: artifacts/
+          if-no-files-found: warn

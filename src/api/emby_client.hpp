@@ -39,6 +39,13 @@ public:
         std::string overview;
         int productionYear = 0;
         double communityRating = 0.0;
+        // Resume support
+        long long playbackPositionTicks = 0;
+        long long runTimeTicks = 0;
+        // Episode info
+        int indexNumber = 0;        // Episode number
+        int parentIndexNumber = 0;  // Season number
+        std::string seriesName;
     };
 
     // Get User Views (Home screen libraries)

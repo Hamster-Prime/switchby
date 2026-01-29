@@ -204,8 +204,7 @@ void EmbyClient::getItems(const std::string& parentId, std::function<void(bool s
 }
 #include <sys/stat.h>
 #include <fstream>
-
-// ... existing code ...
+#include "utils/cache_manager.hpp"
 
 // Helper to write to file
 static size_t WriteToFileCallback(void* contents, size_t size, size_t nmemb, void* userp)
@@ -216,19 +215,17 @@ static size_t WriteToFileCallback(void* contents, size_t size, size_t nmemb, voi
 }
 
 void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag, std::function<void(bool success, const std::string& path)> cb, const std::string& type) {
-    // Determine cache path
-    std::string cacheDir = "cache";
-    #ifdef __SWITCH__
-    cacheDir = "/switch/switchby/cache";
-    #endif
-    
-    mkdir(cacheDir.c_str(), 0777);
-    
+    // Use cache manager
+    CacheManager::instance().ensureCacheDir();
+    std::string cacheDir = CacheManager::instance().getCacheDir();
+
     std::string filename = cacheDir + "/" + itemId + "_" + type + ".jpg";
-    
-    // Check if file exists
+
+    // Check if file exists (cache hit)
     struct stat buffer;
     if (stat(filename.c_str(), &buffer) == 0) {
+        // Update access time for LRU
+        CacheManager::instance().touchFile(filename);
         cb(true, filename);
         return;
     }
@@ -236,7 +233,7 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
     // Adjust max width based on type
     int maxWidth = (type == "Backdrop") ? 1280 : 400;
     std::string endpoint = "/Items/" + itemId + "/Images/" + type + "?tag=" + tag + "&MaxWidth=" + std::to_string(maxWidth) + "&Quality=90";
-    
+
     ThreadPool::instance().submit([this, endpoint, filename, cb]() {
         CURL* curl;
         CURLcode res;
@@ -274,7 +271,7 @@ void EmbyClient::downloadImage(const std::string& itemId, const std::string& tag
 }
 void EmbyClient::getItem(const std::string& itemId, std::function<void(bool success, const EmbyItem& item)> cb) {
     std::string endpoint = "/Users/" + this->userId + "/Items/" + itemId;
-    
+
     this->get(endpoint, [cb](bool success, const json& jItem) {
         if (success) {
             EmbyItem item;
@@ -285,13 +282,22 @@ void EmbyClient::getItem(const std::string& itemId, std::function<void(bool succ
                 item.overview = jItem.value("Overview", "");
                 item.productionYear = jItem.value("ProductionYear", 0);
                 item.communityRating = jItem.value("CommunityRating", 0.0);
-                
+
+                // Resume position
+                if (jItem.contains("UserData") && jItem["UserData"].contains("PlaybackPositionTicks")) {
+                    item.playbackPositionTicks = jItem["UserData"]["PlaybackPositionTicks"].get<long long>();
+                }
+                item.runTimeTicks = jItem.value("RunTimeTicks", 0LL);
+
+                // Episode info
+                item.indexNumber = jItem.value("IndexNumber", 0);
+                item.parentIndexNumber = jItem.value("ParentIndexNumber", 0);
+                item.seriesName = jItem.value("SeriesName", "");
+
                 if (jItem.contains("ImageTags")) {
                     if (jItem["ImageTags"].contains("Primary")) {
                         item.primaryImageTag = jItem["ImageTags"]["Primary"];
                     }
-                    // For backdrops, it's usually an array "Backdrops" which is a list of tags.
-                    // But typically in item details "BackdropImageTags" is a list.
                     if (jItem.contains("BackdropImageTags") && jItem["BackdropImageTags"].is_array() && !jItem["BackdropImageTags"].empty()) {
                          item.backdropImageTag = jItem["BackdropImageTags"][0];
                     }

@@ -112,8 +112,26 @@ void DetailActivity::onContentAvailable() {
         // Safe UI update
         brls::sync([this, success, item]() {
             if (success) {
-                this->lblTitle->setText(item.name);
-                
+                // Build title with episode info
+                std::string displayTitle = item.name;
+                if (item.type == "Episode") {
+                    // Format: "S01E05 - Episode Name" or "SeriesName - S01E05"
+                    char episodeInfo[32];
+                    snprintf(episodeInfo, sizeof(episodeInfo), "S%02dE%02d",
+                             item.parentIndexNumber, item.indexNumber);
+                    if (!item.seriesName.empty()) {
+                        displayTitle = item.seriesName + " - " + std::string(episodeInfo) + " - " + item.name;
+                    } else {
+                        displayTitle = std::string(episodeInfo) + " - " + item.name;
+                    }
+                } else if (item.type == "Season") {
+                    // Format: "Season 1" with series name
+                    if (!item.seriesName.empty()) {
+                        displayTitle = item.seriesName + " - " + item.name;
+                    }
+                }
+                this->lblTitle->setText(displayTitle);
+
                 std::string meta;
                 if (item.productionYear > 0) {
                     meta = std::to_string(item.productionYear);
@@ -123,6 +141,16 @@ void DetailActivity::onContentAvailable() {
                     snprintf(ratingBuf, sizeof(ratingBuf), "%.1f", item.communityRating);
                     if (!meta.empty()) meta += "  •  ";
                     meta += "★ " + std::string(ratingBuf);
+                }
+                // Show runtime for movies/episodes
+                if (item.runTimeTicks > 0) {
+                    int runtimeMins = (int)(item.runTimeTicks / 10000000 / 60);
+                    if (!meta.empty()) meta += "  •  ";
+                    if (runtimeMins >= 60) {
+                        meta += std::to_string(runtimeMins / 60) + "h " + std::to_string(runtimeMins % 60) + "m";
+                    } else {
+                        meta += std::to_string(runtimeMins) + " min";
+                    }
                 }
                 if (!item.type.empty()) {
                     if (!meta.empty()) meta += "  •  ";
@@ -145,15 +173,26 @@ void DetailActivity::onContentAvailable() {
                         return true;
                     });
                 } else {
-                    this->btnPlay->setText("▶ Play");
+                    // Show resume button if there's a saved position
+                    if (item.playbackPositionTicks > 0) {
+                        double resumeSec = (double)item.playbackPositionTicks / 10000000.0;
+                        int mins = (int)(resumeSec / 60);
+                        int secs = (int)(resumeSec) % 60;
+                        char resumeLabel[64];
+                        snprintf(resumeLabel, sizeof(resumeLabel), "▶ Resume (%d:%02d)", mins, secs);
+                        this->btnPlay->setText(resumeLabel);
+                    } else {
+                        this->btnPlay->setText("▶ Play");
+                    }
+
                     this->btnPlay->registerClickAction([this, item](brls::View* view) {
                         this->loadingOverlay->setVisibility(brls::Visibility::VISIBLE);
                         brls::Application::notify("Requesting playback info...");
-                        
+
                         EmbyClient::instance().getPlaybackInfo(item.id, [this, item](bool success, const EmbyClient::PlaybackInfo& info) {
                             brls::sync([this, success, info, item]() {
                                 this->loadingOverlay->setVisibility(brls::Visibility::GONE);
-                                
+
                                 if (success && !info.mediaSources.empty()) {
                                     std::string finalUrl;
                                     const EmbyClient::MediaSource* bestSource = nullptr;
@@ -173,9 +212,9 @@ void DetailActivity::onContentAvailable() {
                                         }
                                     }
                                     if (!bestSource) bestSource = &info.mediaSources[0];
-                                    
+
                                     const auto& source = *bestSource;
-                                    
+
                                     if (source.supportsDirectPlay || source.supportsDirectStream) {
                                         finalUrl = source.directStreamUrl;
                                         brls::Logger::info("Using Direct Play/Stream: {}", finalUrl);
@@ -191,8 +230,9 @@ void DetailActivity::onContentAvailable() {
                                             return;
                                         }
                                     }
-                                    
-                                    brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id));
+
+                                    // Pass resume position to player
+                                    brls::Application::pushActivity(new PlayerActivity(finalUrl, item.id, item.playbackPositionTicks));
                                 } else {
                                     brls::Application::notify("Failed to get playback info");
                                 }

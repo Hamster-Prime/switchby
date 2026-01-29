@@ -5,6 +5,7 @@
 
 #ifdef __SWITCH__
 // Switch specific includes
+#include <EGL/egl.h>
 #else
 #include <GLFW/glfw3.h>
 #endif
@@ -56,13 +57,14 @@ private:
 
 static void* get_proc_address(void* ctx, const char* name) {
 #ifdef __SWITCH__
-    return nullptr;
+    return (void*)eglGetProcAddress(name);
 #else
     return (void*)glfwGetProcAddress(name);
 #endif
 }
 
-PlayerActivity::PlayerActivity(std::string url, std::string itemId) : url(url), itemId(itemId) {
+PlayerActivity::PlayerActivity(std::string url, std::string itemId, long long resumePositionTicks)
+    : url(url), itemId(itemId), resumePositionTicks(resumePositionTicks) {
     this->lastReportTime = std::chrono::steady_clock::now();
 }
 
@@ -265,29 +267,43 @@ void PlayerActivity::updateOsd() {
     double pos = 0, dur = 0;
     mpv_get_property(this->mpv, "time-pos", MPV_FORMAT_DOUBLE, &pos);
     mpv_get_property(this->mpv, "duration", MPV_FORMAT_DOUBLE, &dur);
-    
+
+    // Resume playback - seek to saved position once duration is known
+    if (!this->hasSeekToResume && this->resumePositionTicks > 0 && dur > 0) {
+        double resumeSeconds = (double)this->resumePositionTicks / 10000000.0;
+        // Only resume if we're not too close to the end (within 95%)
+        if (resumeSeconds < dur * 0.95) {
+            char seekCmd[64];
+            snprintf(seekCmd, sizeof(seekCmd), "%.1f", resumeSeconds);
+            const char* args[] = {"seek", seekCmd, "absolute", nullptr};
+            mpv_command(this->mpv, args);
+            brls::Application::notify("Resuming from " + formatTime(resumeSeconds));
+        }
+        this->hasSeekToResume = true;
+    }
+
     this->position = pos;
     this->duration = dur;
-    
+
     // Update time label
     this->lblTime->setText(formatTime(pos) + " / " + formatTime(dur));
-    
+
     // Update progress bar
     if (dur > 0) {
         float progress = pos / dur;
         float maxWidth = brls::Application::contentWidth - 80;
         this->progressFill->setWidth(maxWidth * progress);
     }
-    
+
     // Check pause state
     int paused = 0;
     mpv_get_property(this->mpv, "pause", MPV_FORMAT_FLAG, &paused);
     this->isPaused = (paused != 0);
-    
+
     // Check if buffering
     int buffering = 0;
     mpv_get_property(this->mpv, "paused-for-cache", MPV_FORMAT_FLAG, &buffering);
-    
+
     if (buffering) {
         this->lblStatus->setText("⏳ Buffering...");
         this->lblStatus->setVisibility(brls::Visibility::VISIBLE);
