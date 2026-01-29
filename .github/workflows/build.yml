@@ -24,6 +24,7 @@ jobs:
             switch-curl \
             switch-libmpv \
             switch-ffmpeg \
+            switch-lua \
             switch-mbedtls \
             switch-libjpeg-turbo \
             switch-freetype \

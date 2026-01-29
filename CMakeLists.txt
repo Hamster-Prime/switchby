@@ -120,6 +120,7 @@ if ("${PLATFORM}" STREQUAL "SWITCH")
         glapi
         drm_nouveau
         nx
+        lua
     )
 
     nx_create_nro(switchby
