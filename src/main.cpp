@@ -1,20 +1,9 @@
 #include <borealis.hpp>
 #include "activity/server_select_activity.hpp"
-#include <queue>
-#include <mutex>
-#include <functional>
 
-// Global Main Thread Dispatcher
-// Since the older borealis lib lacks brls::sync, we implement it manually.
-static std::queue<std::function<void()>> mainThreadTasks;
-static std::mutex mainThreadMutex;
-
-namespace brls {
-    void sync(std::function<void()> task) {
-        std::lock_guard<std::mutex> lock(mainThreadMutex);
-        mainThreadTasks.push(task);
-    }
-}
+// No longer need manual main thread dispatching,
+// assuming the updated borealis library handles this.
+// Use brls::sync(...) directly where needed in other parts of the code.
 
 int main(int argc, char* argv[])
 {
@@ -32,24 +21,10 @@ int main(int argc, char* argv[])
     brls::Application::pushActivity(new ServerSelectActivity());
 
     // Run the app
-    while (brls::Application::mainLoop()) {
-        // Process main thread tasks
-        std::function<void()> task;
-        {
-            std::lock_guard<std::mutex> lock(mainThreadMutex);
-            if (!mainThreadTasks.empty()) {
-                task = std::move(mainThreadTasks.front());
-                mainThreadTasks.pop();
-            }
-        }
-        
-        if (task) {
-            try {
-                task();
-            } catch(...) {
-                brls::Logger::error("Main thread task failed");
-            }
-        }
+    while (brls::Application::mainLoop())
+    {
+        // The main loop is now much simpler.
+        // The borealis backend will handle events and rendering.
     }
 
     // Exit

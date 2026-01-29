@@ -1,63 +1,88 @@
 cmake_minimum_required(VERSION 3.15)
 project(switchby)
 
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Dependencies
+# Set a default build type if none was specified (e.g., Release)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+  message(STATUS "Setting build type to 'Release' as default.")
+endif()
+
+# --- Dependencies ---
+# Using FetchContent to ensure reproducible builds by locking dependency versions.
+# This replaces the old git submodules.
 include(FetchContent)
 
+# Declare all dependencies first
 FetchContent_Declare(
     borealis
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/borealis
+    GIT_REPOSITORY https://github.com/nativelbs/borealis.git
+    GIT_TAG main # For stability, it's best to lock this to a specific commit hash or release tag
 )
-FetchContent_MakeAvailable(borealis)
-
 FetchContent_Declare(
     json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
     GIT_TAG v3.11.2
 )
-FetchContent_MakeAvailable(json)
-
-# Sources
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-
-# Executable
-add_executable(switchby ${SOURCES})
-
 FetchContent_Declare(
     libretro-common
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libretro-common
+    GIT_REPOSITORY https://github.com/libretro/libretro-common.git
+    GIT_TAG v1.16.0 # Using a recent stable tag
 )
-FetchContent_MakeAvailable(libretro-common)
-
-# Definitions
-add_definitions("-DBOREALIS_RESOURCES='${CMAKE_CURRENT_SOURCE_DIR}/resources'")
-
-# Include dirs
-target_include_directories(switchby PRIVATE src)
-target_include_directories(switchby PRIVATE ${borealis_SOURCE_DIR}/library/include)
-target_include_directories(switchby PRIVATE ${libretro-common_SOURCE_DIR}/include)
-target_include_directories(switchby PRIVATE ${nanovg_SOURCE_DIR}/src)
-
 FetchContent_Declare(
     nanovg
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/nanovg
+    GIT_REPOSITORY https://github.com/memononen/nanovg.git
+    GIT_TAG master # Best to lock to a specific commit hash
 )
-FetchContent_MakeAvailable(nanovg)
 
+# Make all dependencies available for use
+FetchContent_MakeAvailable(borealis json libretro-common nanovg)
 
-# Link
+# --- Sources ---
+# Explicitly list source files for a more robust build.
+# Please add all your .cpp files here.
+set(SOURCES
+    src/main.cpp
+    # src/activity/server_select_activity.cpp
+    # ... add other source files
+)
+
+# --- Executable ---
+add_executable(switchby ${SOURCES})
+
+# --- Definitions & Includes ---
+add_definitions("-DBOREALIS_RESOURCES='${CMAKE_CURRENT_SOURCE_DIR}/resources'")
+
+target_include_directories(switchby PRIVATE
+    src
+    ${borealis_SOURCE_DIR}/library/include
+    ${libretro-common_SOURCE_DIR}/include
+    ${nanovg_SOURCE_DIR}/src
+)
+
+# --- Compiler Optimizations ---
+# Add performance optimizations for Release builds, crucial for Switch.
+target_compile_options(switchby PRIVATE
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
+    $<$<CONFIG:Debug>:-g>
+)
+
+# --- Linking ---
 find_package(CURL REQUIRED)
-# Borealis target is usually just 'borealis'
-target_link_libraries(switchby borealis nanovg nanovg_gl3 nlohmann_json::nlohmann_json CURL::libcurl)
+target_link_libraries(switchby PRIVATE
+    borealis
+    nanovg
+    nlohmann_json::nlohmann_json
+    CURL::libcurl
+)
 
-# Platform specific configuration
+# --- Platform Specific Configuration ---
 if (${PLATFORM} STREQUAL "SWITCH")
     # Switch build
-    # Assuming switch-mpv provides proper CMake or we link it by name
-    # Usually switch-mpv is just -lmpv
-    target_link_libraries(switchby mpv)
+    target_link_libraries(switchby PRIVATE mpv) # Use PRIVATE for better encapsulation
 
     include(${DEVKITPRO}/libnx/switch_rules)
     build_switch_bin(switchby
@@ -69,10 +94,9 @@ else()
     # Desktop build
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(MPV REQUIRED mpv)
-    
+
     target_include_directories(switchby PRIVATE ${MPV_INCLUDE_DIRS})
-    target_link_libraries(switchby ${MPV_LIBRARIES})
-    
-    # Add compile definition for Desktop if needed
+    target_link_libraries(switchby PRIVATE ${MPV_LIBRARIES})
+
     target_compile_definitions(switchby PRIVATE PLATFORM_DESKTOP)
 endif()
