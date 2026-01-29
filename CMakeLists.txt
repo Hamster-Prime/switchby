@@ -19,7 +19,7 @@ include(FetchContent)
 # Declare all dependencies first
 FetchContent_Declare(
     borealis
-    GIT_REPOSITORY https://github.com/nativelbs/borealis.git
+    GIT_REPOSITORY https://github.com/natinusala/borealis.git
     GIT_TAG main # For stability, it's best to lock this to a specific commit hash or release tag
 )
 FetchContent_Declare(
