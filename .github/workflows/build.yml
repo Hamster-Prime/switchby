@@ -16,7 +16,7 @@ jobs:
           submodules: 'recursive' # Fetch submodules defined in .gitmodules if any
 
       - name: Install devkitPro
-        uses: devkitpro/setup-devkitpro@v3
+        uses: devkitpro-actions/setup-devkitpro@v3
 
       - name: Configure CMake
         run: |
