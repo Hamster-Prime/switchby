@@ -2,6 +2,7 @@
 build/
 cmake-build-*/
 out/
+build_switch.sh
 
 # IDE
 .idea/
@@ -33,3 +34,4 @@ Thumbs.db
 
 # Logs
 *.log
+
