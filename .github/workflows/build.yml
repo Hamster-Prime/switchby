@@ -1,0 +1,40 @@
+name: Build Switch NRO
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive' # Fetch submodules defined in .gitmodules if any
+
+      - name: Install devkitPro
+        uses: devkitpro/setup-devkitpro@v3
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Unix Makefiles" \
+                -DPLATFORM=SWITCH \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_TOOLCHAIN_FILE=${DEVKITPRO}/cmake/Switch.cmake
+      
+      - name: Build project
+        run: cmake --build build -j `nproc`
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifacts
+          mv build/switchby.nro artifacts/switchby.nro
+          
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: switchby-nro
+          path: artifacts/
