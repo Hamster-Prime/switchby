@@ -48,7 +48,7 @@ jobs:
 
       - name: Configure CMake
         run: |
-          source $DEVKITPRO/switchvars.sh
+          . $DEVKITPRO/switchvars.sh
           cmake -B build -G "Unix Makefiles" \
                 -DPLATFORM=SWITCH \
                 -DCMAKE_BUILD_TYPE=Release \
@@ -56,7 +56,7 @@ jobs:
 
       - name: Build project
         run: |
-          source $DEVKITPRO/switchvars.sh
+          . $DEVKITPRO/switchvars.sh
           cmake --build build -j$(nproc)
 
       - name: Prepare artifact
