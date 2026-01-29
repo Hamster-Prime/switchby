@@ -46,6 +46,8 @@ FetchContent_MakeAvailable(borealis json libretro-common nanovg)
 # Please add all your .cpp files here.
 set(SOURCES
     src/main.cpp
+    src/activity/detail_activity.cpp
+    src/activity/player_activity.cpp
     # src/activity/server_select_activity.cpp
     # ... add other source files
 )
@@ -57,7 +59,7 @@ add_executable(switchby ${SOURCES})
 add_definitions("-DBOREALIS_RESOURCES='${CMAKE_CURRENT_SOURCE_DIR}/resources'")
 
 target_include_directories(switchby PRIVATE
-    src
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${borealis_SOURCE_DIR}/library/include
     ${libretro-common_SOURCE_DIR}/include
     ${nanovg_SOURCE_DIR}/src
