@@ -43,6 +43,11 @@ jobs:
           git clone https://github.com/libretro/libretro-common.git deps/libretro-common
           git clone https://github.com/memononen/nanovg.git deps/nanovg
 
+      - name: Patch borealis for FetchContent (CMAKE_SOURCE_DIR -> CMAKE_CURRENT_SOURCE_DIR)
+        run: |
+          sed -i 's|${CMAKE_SOURCE_DIR}/library/|${CMAKE_CURRENT_SOURCE_DIR}/library/|g' deps/borealis/CMakeLists.txt
+          sed -i 's|${CMAKE_SOURCE_DIR}/demo/|${CMAKE_CURRENT_SOURCE_DIR}/demo/|g' deps/borealis/CMakeLists.txt
+
       - name: Configure CMake
         run: |
           . $DEVKITPRO/switchvars.sh
