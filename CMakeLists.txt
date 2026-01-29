@@ -30,7 +30,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     libretro-common
     GIT_REPOSITORY https://github.com/libretro/libretro-common.git
-    GIT_TAG v1.16.0 # Using a recent stable tag
+    GIT_TAG master # Using master as no tags are available
 )
 FetchContent_Declare(
     nanovg
